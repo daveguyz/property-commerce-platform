@@ -1,0 +1,82 @@
+<section class="hero" id="hero">
+  <div class="hero-bg">
+    {% if section.settings.background_video != blank %}
+      <video autoplay muted loop playsinline class="hero-video">
+        <source src="{{ section.settings.background_video }}" type="video/mp4">
+      </video>
+    {% elsif section.settings.background_image != blank %}
+      <img src="{{ section.settings.background_image | image_url: width: 1920 }}"
+           alt="Namibia landscape" class="hero-image" loading="eager">
+    {% else %}
+      <div class="hero-gradient"></div>
+    {% endif %}
+    <div class="hero-overlay"></div>
+  </div>
+  <div class="hero-content">
+    <h1 class="hero-title">
+      {{ section.settings.heading | default: "Discover Extraordinary Places to Stay in Namibia" }}
+    </h1>
+    <p class="hero-subtitle">
+      {{ section.settings.subheading | default: "From Etosha wildlife lodges to Swakopmund coastal retreats — curated by AI, loved by travellers" }}
+    </p>
+
+    <!-- Search Bar -->
+    <div class="hero-search" id="hero-search">
+      <div class="search-fields">
+        <div class="search-field">
+          <label for="destination">Where to?</label>
+          <input type="text" id="destination" placeholder="Windhoek, Swakopmund, Etosha…" autocomplete="off">
+          <div id="destination-suggestions" class="search-suggestions"></div>
+        </div>
+        <div class="search-field">
+          <label for="check-in">Check In</label>
+          <input type="date" id="check-in" min="{{ 'now' | date: '%Y-%m-%d' }}">
+        </div>
+        <div class="search-field">
+          <label for="check-out">Check Out</label>
+          <input type="date" id="check-out">
+        </div>
+        <div class="search-field">
+          <label for="guests">Guests</label>
+          <select id="guests">
+            {% for i in (1..10) %}<option value="{{ i }}">{{ i }} guest{% if i > 1 %}s{% endif %}</option>{% endfor %}
+          </select>
+        </div>
+        <button class="btn-search" id="search-btn" aria-label="Search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+          Search
+        </button>
+      </div>
+
+      <!-- AI Quick Search -->
+      <div class="ai-search-row">
+        <span class="ai-badge">✨ AI</span>
+        <input type="text" id="ai-search-input"
+               placeholder="Try: &quot;Pet-friendly lodge near Etosha for 4 people in July&quot;"
+               class="ai-search-input">
+        <button class="btn-ai-search" id="ai-search-btn">Ask AI Concierge</button>
+      </div>
+    </div>
+
+    <!-- Quick filters -->
+    <div class="quick-filters">
+      {% for tag in section.settings.quick_filter_tags %}
+        <button class="quick-filter-btn" data-filter="{{ tag }}">{{ tag }}</button>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Hero",
+  "settings": [
+    {"type": "image_picker", "id": "background_image", "label": "Background image"},
+    {"type": "text", "id": "background_video", "label": "Background video URL"},
+    {"type": "text", "id": "heading", "label": "Heading"},
+    {"type": "textarea", "id": "subheading", "label": "Subheading"},
+    {"type": "textarea", "id": "quick_filter_tags", "label": "Quick filter tags (comma separated)", "default": "Pet-friendly,Pool,Beach,Wildlife,Luxury,Budget"}
+  ],
+  "presets": [{"name": "Hero"}]
+}
+{% endschema %}

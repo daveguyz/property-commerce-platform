@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><title>Check-In Tomorrow</title>
+<style>
+  body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; }
+  .container { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+  .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 40px 32px; text-align: center; }
+  .header h1 { color: #f0b429; margin: 0; font-size: 26px; }
+  .body { padding: 32px; }
+  .access-code { background: #1a1a2e; color: #f0b429; font-size: 32px; font-weight: bold; letter-spacing: 8px; text-align: center; padding: 24px; border-radius: 8px; margin: 24px 0; font-family: monospace; }
+  .tip-box { background: #fff8e6; border-radius: 8px; padding: 16px 20px; margin: 16px 0; border: 1px solid #f0b429; }
+  .footer { background: #f8f9fa; padding: 20px 32px; text-align: center; color: #888; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1 th:text="${brandName}">StaySphere</h1>
+    <p style="color:#aab4c4;margin:8px 0 0">Check-In Tomorrow!</p>
+  </div>
+  <div class="body">
+    <p>Hi <strong th:text="${guestName}">Guest</strong>, your stay begins tomorrow!</p>
+    <p>Here is your property access code:</p>
+    <div class="access-code" th:text="${accessCode}">ABCD-1234</div>
+    <div class="tip-box">
+      <strong>💡 Tips for a smooth check-in:</strong>
+      <ul>
+        <li>Enter the code on the keypad at the main entrance</li>
+        <li>Parking is available <span th:text="${hasParking ? 'on-site' : 'nearby'}">on-site</span></li>
+        <li>Wi-Fi password is in the welcome booklet inside</li>
+        <li>Check-in time: after 2:00 PM</li>
+      </ul>
+    </div>
+    <p>Property: <strong th:text="${propertyName}">Property</strong></p>
+    <p>Address: <span th:text="${propertyAddress}">Address</span></p>
+    <p style="color:#888;font-size:13px;">Need help? Contact your host directly or reach us at support@staysphere.com</p>
+  </div>
+  <div class="footer">
+    <p>&copy; <span th:text="${year}">2025</span> <span th:text="${brandName}">StaySphere</span></p>
+  </div>
+</div>
+</body>
+</html>

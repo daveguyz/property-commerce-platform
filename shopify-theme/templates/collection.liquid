@@ -1,0 +1,59 @@
+<div class="collection-page">
+  <div class="collection-header">
+    <h1>{{ collection.title }}</h1>
+    <p>{{ collection.description }}</p>
+    <div class="result-count" id="result-count">Loading stays…</div>
+  </div>
+
+  <!-- Filters Sidebar -->
+  <div class="collection-layout">
+    <aside class="filters-sidebar" id="filters-sidebar">
+      <div class="filter-group">
+        <h3>Price per night (NAD)</h3>
+        <div class="price-range">
+          <input type="number" id="min-price" placeholder="Min" min="0">
+          <span>–</span>
+          <input type="number" id="max-price" placeholder="Max" min="0">
+        </div>
+      </div>
+      <div class="filter-group">
+        <h3>Bedrooms</h3>
+        <div class="btn-group">
+          {% for i in (1..5) %}
+            <button class="filter-btn" data-filter="bedrooms" data-value="{{ i }}">{{ i }}{% if i == 5 %}+{% endif %}</button>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="filter-group">
+        <h3>Amenities</h3>
+        {% assign amenities = "Wi-Fi,Pool,Parking,Kitchen,Pet-friendly,Air Con,Workspace" | split: "," %}
+        {% for amenity in amenities %}
+          <label class="filter-checkbox">
+            <input type="checkbox" data-filter="amenity" data-value="{{ amenity | downcase | replace: ' ', '-' | replace: '-', '_' }}">
+            {{ amenity }}
+          </label>
+        {% endfor %}
+      </div>
+      <div class="filter-group">
+        <h3>Rating</h3>
+        {% for i in (1..5) reversed %}
+          <button class="rating-btn" data-min-rating="{{ i }}">
+            {% for j in (1..i) %}⭐{% endfor %} & up
+          </button>
+        {% endfor %}
+      </div>
+      <button class="btn-clear-filters" id="clear-filters">Clear all filters</button>
+    </aside>
+
+    <!-- Property Grid -->
+    <main class="properties-grid" id="properties-grid">
+      {% for product in collection.products %}
+        {% include 'property-card', product: product %}
+      {% endfor %}
+      <div id="properties-container"></div>
+      <div id="load-more-wrapper">
+        <button class="btn-load-more" id="load-more-btn">Load more stays</button>
+      </div>
+    </main>
+  </div>
+</div>

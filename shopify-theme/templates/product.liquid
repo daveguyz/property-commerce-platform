@@ -1,0 +1,121 @@
+{% assign property_id = product.metafields.staysphere.property_id %}
+<div class="property-detail" data-property-id="{{ property_id }}">
+
+  <!-- Image Gallery -->
+  <div class="property-gallery" id="property-gallery">
+    {% for image in product.images limit: 5 %}
+      <div class="gallery-item {% if forloop.first %}gallery-main{% endif %}">
+        <img src="{{ image | image_url: width: 1200 }}" alt="{{ product.title }}" loading="{% if forloop.first %}eager{% else %}lazy{% endif %}">
+      </div>
+    {% endfor %}
+    <button class="btn-all-photos" id="btn-all-photos">Show all photos</button>
+  </div>
+
+  <div class="property-detail-layout">
+    <!-- Left: Details -->
+    <div class="property-info">
+      <div class="property-header">
+        <h1 class="property-title">{{ product.title }}</h1>
+        <div class="property-location">
+          📍 {{ product.metafields.staysphere.city }},
+          {{ product.metafields.staysphere.region | default: "Namibia" }}
+        </div>
+        <div class="property-stats">
+          <span>🛏 {{ product.metafields.staysphere.bedrooms }} bedrooms</span>
+          <span>🚿 {{ product.metafields.staysphere.bathrooms | default: 1 }} bathrooms</span>
+          <span>👥 Up to {{ product.metafields.staysphere.max_guests }} guests</span>
+        </div>
+      </div>
+
+      <!-- Trust Score Badge -->
+      <div class="trust-badge" id="trust-badge" data-property-id="{{ property_id }}">
+        <div class="trust-score-circle" id="trust-score-circle">…</div>
+        <div class="trust-info">
+          <strong>Trust Score</strong>
+          <span id="trust-label">Loading…</span>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="property-description">
+        {{ product.description }}
+      </div>
+
+      <!-- Amenities -->
+      <div class="amenities-section">
+        <h2>What this place offers</h2>
+        <div class="amenities-grid" id="amenities-grid">
+          <!-- Populated by JS from API -->
+        </div>
+      </div>
+
+      <!-- Reviews -->
+      <div class="reviews-section">
+        <h2>Reviews <span id="review-count" class="review-count"></span></h2>
+        <div class="rating-breakdown" id="rating-breakdown"></div>
+        <div class="reviews-list" id="reviews-list"></div>
+        <button class="btn-load-reviews" id="load-more-reviews">Show more reviews</button>
+      </div>
+
+      <!-- Area Intelligence -->
+      <div class="area-intelligence" id="area-intelligence">
+        <h2>📍 About this area</h2>
+        <div id="area-content">Loading area insights…</div>
+      </div>
+    </div>
+
+    <!-- Right: Booking Widget -->
+    <aside class="booking-widget-wrapper">
+      <div class="booking-widget" id="booking-widget" data-property-id="{{ property_id }}">
+        <div class="booking-price">
+          <span class="price-big" id="nightly-rate">NAD {{ product.price | money_without_currency }}</span>
+          <span>/ night</span>
+        </div>
+
+        <div class="booking-fields">
+          <div class="date-range-picker">
+            <div class="date-field">
+              <label>CHECK-IN</label>
+              <input type="date" id="booking-checkin" min="{{ 'now' | date: '%Y-%m-%d' }}">
+            </div>
+            <div class="date-field">
+              <label>CHECK-OUT</label>
+              <input type="date" id="booking-checkout">
+            </div>
+          </div>
+          <div class="guest-picker">
+            <label>GUESTS</label>
+            <select id="booking-guests">
+              {% for i in (1..product.metafields.staysphere.max_guests) %}
+                <option value="{{ i }}">{{ i }} guest{% if i > 1 %}s{% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="price-breakdown" id="price-breakdown" style="display:none">
+          <div class="price-line"><span id="nights-label">0 nights × NAD 0</span><span id="nights-total">NAD 0</span></div>
+          <div class="price-line"><span>Cleaning fee</span><span id="cleaning-fee">NAD 0</span></div>
+          <div class="price-line"><span>Service fee</span><span id="service-fee">NAD 0</span></div>
+          <div class="price-line price-total"><span>Total (before taxes)</span><span id="total-amount">NAD 0</span></div>
+        </div>
+
+        <button class="btn-book" id="btn-book">Reserve</button>
+        <button class="btn-negotiate" id="btn-negotiate">💬 Make an offer</button>
+        <p class="booking-note">You won't be charged yet</p>
+
+        <!-- Smart Calendar Insights -->
+        <div class="calendar-insights" id="calendar-insights" style="display:none">
+          <div class="insights-header">✨ AI Insights</div>
+          <div id="insights-content"></div>
+        </div>
+      </div>
+
+      <!-- Trip Builder -->
+      <div class="trip-builder-cta">
+        <button id="add-to-trip" class="btn-outline">➕ Add to Trip Builder</button>
+      </div>
+    </aside>
+  </div>
+</div>
+{% schema %}{"name": "Property Detail", "settings": []}{% endschema %}

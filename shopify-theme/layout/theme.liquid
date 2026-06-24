@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="{{ request.locale.iso_code }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="{{ page_description | escape }}">
+  <title>{{ page_title }} | {{ shop.name }}</title>
+  <link rel="canonical" href="{{ canonical_url }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+  {{ content_for_header }}
+  {{ 'staysphere.css' | asset_url | stylesheet_tag }}
+  <script src="{{ 'staysphere.js' | asset_url }}" defer></script>
+  <script>
+    window.StaySphere = {
+      apiUrl: '{{ settings.api_gateway_url }}',
+      shopUrl: '{{ shop.url }}',
+      currency: '{{ shop.currency }}'
+    };
+  </script>
+</head>
+<body class="{% if customer %}customer-logged-in{% endif %}" data-section-id="body">
+  {% section 'announcement-bar' %}
+  {% section 'header' %}
+  <main id="main-content" role="main">
+    {{ content_for_layout }}
+  </main>
+  {% section 'footer' %}
+  <div id="ai-concierge-widget" class="concierge-widget hidden"></div>
+  <button id="concierge-toggle" class="concierge-fab" aria-label="AI Travel Concierge">
+    <span class="concierge-fab-icon">🤖</span>
+    <span class="concierge-fab-label">Ask AI</span>
+  </button>
+</body>
+</html>

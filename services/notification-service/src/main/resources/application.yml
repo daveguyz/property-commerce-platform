@@ -1,0 +1,58 @@
+spring:
+  application:
+    name: notification-service
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/staysphere_notifications}
+    username: ${DB_USER:staysphere}
+    password: ${DB_PASS:staysphere_secret}
+    hikari:
+      maximum-pool-size: 5
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USER:your_email@gmail.com}
+    password: ${SMTP_PASSWORD:your_app_password}
+    from: ${SMTP_FROM:noreply@staysphere.com}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
+    consumer:
+      group-id: notification-service-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.staysphere.shared.events"
+
+server:
+  port: ${PORT:8087}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+twilio:
+  account-sid: ${TWILIO_ACCOUNT_SID:your_sid}
+  auth-token: ${TWILIO_AUTH_TOKEN:your_token}
+  from-number: ${TWILIO_FROM_NUMBER:+1234567890}
+  whatsapp-number: ${TWILIO_WHATSAPP_NUMBER:+14155238886}
+
+staysphere:
+  brand:
+    name: StaySphere
+  jwt:
+    secret: ${JWT_SECRET:base64_encoded_256_bit_secret_key_replace_in_production}

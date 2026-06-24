@@ -1,0 +1,55 @@
+{% comment %}Renders a property card. Accepts: property (PropertyDTO JSON) or product (Shopify product){% endcomment %}
+
+<article class="property-card" data-property-id="{{ property.id | default: product.metafields.staysphere.property_id }}">
+  <a href="{{ property.url | default: product.url }}" class="card-image-link">
+    <div class="card-image-wrapper">
+      {% if property.imageUrls.first %}
+        <img src="{{ property.imageUrls.first }}" alt="{{ property.title }}"
+             class="card-image" loading="lazy" width="400" height="280">
+      {% elsif product.featured_image %}
+        <img src="{{ product.featured_image | image_url: width: 400 }}"
+             alt="{{ product.title }}" class="card-image" loading="lazy">
+      {% else %}
+        <div class="card-image-placeholder">🏠</div>
+      {% endif %}
+      <div class="card-badges">
+        {% if property.trustScore >= 80 or product.metafields.staysphere.trust_score >= 80 %}
+          <span class="badge badge-trusted">✓ Trusted</span>
+        {% endif %}
+        {% if property.hasPool %}
+          <span class="badge badge-amenity">Pool</span>
+        {% endif %}
+      </div>
+      <button class="btn-wishlist" data-id="{{ property.id }}" aria-label="Save to wishlist">♡</button>
+    </div>
+  </a>
+  <div class="card-body">
+    <div class="card-location">
+      📍 {{ property.location.city | default: product.metafields.staysphere.city }}
+    </div>
+    <h3 class="card-title">
+      <a href="{{ property.url | default: product.url }}">
+        {{ property.title | default: product.title | truncate: 60 }}
+      </a>
+    </h3>
+    <div class="card-meta">
+      <span>🛏 {{ property.bedrooms | default: product.metafields.staysphere.bedrooms }} bed</span>
+      <span>👥 Up to {{ property.maxGuests | default: product.metafields.staysphere.max_guests }}</span>
+      {% if property.petFriendly %}<span>🐾 Pets OK</span>{% endif %}
+    </div>
+    <div class="card-rating">
+      {% if property.averageRating > 0 %}
+        <span class="rating-stars">⭐ {{ property.averageRating | round: 1 }}</span>
+        <span class="rating-count">({{ property.totalReviews }})</span>
+      {% else %}
+        <span class="rating-new">New listing</span>
+      {% endif %}
+    </div>
+    <div class="card-price">
+      <strong class="price-amount">
+        NAD {{ property.pricing.currentDynamicRate | default: product.price | money_without_currency }}
+      </strong>
+      <span class="price-unit">/ night</span>
+    </div>
+  </div>
+</article>

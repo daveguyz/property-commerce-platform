@@ -1,0 +1,47 @@
+<header class="site-header" role="banner">
+  <div class="header-container">
+    <a href="/" class="header-logo" aria-label="{{ shop.name }}">
+      <span class="logo-text">Stay<span class="logo-accent">Sphere</span></span>
+    </a>
+
+    <nav class="header-nav" role="navigation" aria-label="Main navigation">
+      <a href="/collections/all" class="nav-link">Browse Stays</a>
+      <a href="/pages/destinations" class="nav-link">Destinations</a>
+      <a href="/pages/experiences" class="nav-link">Experiences</a>
+      <a href="/pages/host" class="nav-link">Become a Host</a>
+    </nav>
+
+    <div class="header-actions">
+      {% if customer %}
+        <a href="/account" class="btn-ghost">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          {{ customer.first_name }}
+        </a>
+        <a href="/account/logout" class="btn-ghost">Log out</a>
+      {% else %}
+        <a href="/account/login" class="btn-ghost">Log in</a>
+        <a href="/account/register" class="btn-primary">Sign up</a>
+      {% endif %}
+      <a href="/cart" class="cart-icon" aria-label="Cart">
+        🛒 <span class="cart-count">{{ cart.item_count }}</span>
+      </a>
+    </div>
+
+    <button class="mobile-menu-toggle" aria-expanded="false" aria-controls="mobile-menu">
+      <span class="sr-only">Menu</span>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+  </div>
+</header>
+
+{% schema %}
+{
+  "name": "Header",
+  "settings": [
+    {"type": "image_picker", "id": "logo", "label": "Logo"},
+    {"type": "range", "id": "logo_width", "min": 50, "max": 300, "step": 10, "unit": "px", "label": "Logo width", "default": 150}
+  ]
+}
+{% endschema %}

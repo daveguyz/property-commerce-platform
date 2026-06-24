@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: shopify-integration
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    consumer:
+      group-id: shopify-integration-group
+      auto-offset-reset: earliest
+
+server:
+  port: ${PORT:8090}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+shopify:
+  store-url: ${SHOPIFY_STORE_URL:https://your-store.myshopify.com}
+  access-token: ${SHOPIFY_ACCESS_TOKEN:your_admin_token}
+  storefront-token: ${SHOPIFY_STOREFRONT_TOKEN:your_storefront_token}
+  webhook-secret: ${SHOPIFY_WEBHOOK_SECRET:your_webhook_secret}

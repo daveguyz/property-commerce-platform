@@ -1,0 +1,11 @@
+{
+  "analysis": {
+    "analyzer": {
+      "location_analyzer": {
+        "type": "custom",
+        "tokenizer": "standard",
+        "filter": ["lowercase", "asciifolding"]
+      }
+    }
+  }
+}
