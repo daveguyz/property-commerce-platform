@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><title>Your Auction Is Now Live</title>
+<style>
+  body { font-family:'Helvetica Neue',Arial,sans-serif; background:#f5f5f5; margin:0; padding:0; }
+  .container { max-width:600px; margin:40px auto; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,.08); }
+  .header { background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%); padding:32px; text-align:center; }
+  .header h1 { color:#f0b429; margin:0; font-size:24px; letter-spacing:2px; }
+  .live-badge { display:inline-block; background:#ef4444; color:#fff; padding:6px 16px; border-radius:20px; font-size:14px; font-weight:bold; margin-top:10px; }
+  .body { padding:32px; }
+  .info-box { background:#f8f9fa; border-left:4px solid #f0b429; border-radius:6px; padding:14px 18px; margin:12px 0; }
+  .info-box h3 { margin:0 0 5px; font-size:12px; text-transform:uppercase; letter-spacing:1px; color:#1a1a2e; }
+  .info-box p { margin:2px 0; color:#444; font-size:15px; }
+  .cta { display:block; background:#f0b429; color:#1a1a2e; text-decoration:none; text-align:center; padding:14px 28px; border-radius:8px; font-weight:bold; font-size:15px; margin:20px 0; }
+  .footer { background:#f8f9fa; padding:20px 32px; text-align:center; color:#888; font-size:12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1 th:text="${brandName}">StaySphere</h1>
+    <div class="live-badge">● LIVE NOW</div>
+  </div>
+  <div class="body">
+    <p>Hi <strong th:text="${sellerName}">Seller</strong>,</p>
+    <p>Great news — your auction lot is now <strong>live and accepting bids!</strong></p>
+
+    <div class="info-box"><h3>Lot</h3><p th:text="${lotTitle}">Lot title</p></div>
+    <div class="info-box"><h3>Starting price</h3><p th:text="${currency + ' ' + startingPrice}">NAD 10,000</p></div>
+    <div class="info-box"><h3>Closes at</h3><p th:text="${scheduledEndsAt}">2025-12-31 18:00</p></div>
+
+    <a th:href="${auctionRoomUrl}" class="cta">Watch your auction live →</a>
+  </div>
+  <div class="footer"><p>© <span th:text="${year}">2025</span> <span th:text="${brandName}">StaySphere</span></p></div>
+</div>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><title>Identity Verified</title>
+<style>
+  body { font-family:'Helvetica Neue',Arial,sans-serif; background:#f5f5f5; margin:0; padding:0; }
+  .container { max-width:600px; margin:40px auto; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,.08); }
+  .header { background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%); padding:32px; text-align:center; }
+  .header h1 { color:#f0b429; margin:0; font-size:24px; letter-spacing:2px; }
+  .body { padding:32px; }
+  .verified-badge { background:#ecfdf5; border:2px solid #6ee7b7; border-radius:8px; padding:20px; text-align:center; margin:20px 0; }
+  .verified-badge .icon { font-size:40px; }
+  .verified-badge p { color:#065f46; font-weight:700; font-size:18px; margin:8px 0 0; }
+  .cta { display:block; background:#f0b429; color:#1a1a2e; text-decoration:none; text-align:center; padding:14px 28px; border-radius:8px; font-weight:bold; font-size:15px; margin:20px 0; }
+  .footer { background:#f8f9fa; padding:20px 32px; text-align:center; color:#888; font-size:12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header"><h1 th:text="${brandName}">StaySphere</h1></div>
+  <div class="body">
+    <p>Hi <strong th:text="${userName}">User</strong>,</p>
+    <p>Your identity has been successfully verified.</p>
+
+    <div class="verified-badge">
+      <div class="icon">🪪</div>
+      <p>Identity verified ✓</p>
+    </div>
+
+    <p>You're now cleared to bid on all auction lots, including high-value and KYC-gated auctions on StaySphere.</p>
+    <a th:href="${auctionsUrl}" class="cta">Browse live auctions →</a>
+  </div>
+  <div class="footer"><p>© <span th:text="${year}">2025</span> <span th:text="${brandName}">StaySphere</span></p></div>
+</div>
+</body>
+</html>

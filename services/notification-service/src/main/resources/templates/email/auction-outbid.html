@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><title>You've been outbid</title>
+<style>
+  body { font-family:'Helvetica Neue',Arial,sans-serif; background:#f5f5f5; margin:0; padding:0; }
+  .container { max-width:600px; margin:40px auto; background:#fff; border-radius:12px; overflow:hidden; box-shadow:0 4px 24px rgba(0,0,0,.08); }
+  .header { background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%); padding:32px; text-align:center; }
+  .header h1 { color:#f0b429; margin:0; font-size:24px; letter-spacing:2px; }
+  .body { padding:32px; }
+  .info-box { background:#f8f9fa; border-left:4px solid #ef4444; border-radius:6px; padding:14px 18px; margin:16px 0; }
+  .info-box h3 { margin:0 0 5px; color:#1a1a2e; font-size:12px; text-transform:uppercase; letter-spacing:1px; }
+  .info-box p { margin:2px 0; color:#444; font-size:15px; }
+  .cta { display:block; background:#f0b429; color:#1a1a2e; text-decoration:none; text-align:center; padding:14px 28px; border-radius:8px; font-weight:bold; font-size:15px; margin:20px 0; }
+  .footer { background:#f8f9fa; padding:20px 32px; text-align:center; color:#888; font-size:12px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header"><h1 th:text="${brandName}">StaySphere</h1></div>
+  <div class="body">
+    <p>Hi <strong th:text="${bidderName}">Bidder</strong>,</p>
+    <p>You've been outbid on:</p>
+
+    <div class="info-box">
+      <h3>Lot</h3>
+      <p th:text="${lotTitle}">Lot title</p>
+    </div>
+    <div class="info-box">
+      <h3>New highest bid</h3>
+      <p><strong th:text="${currency + ' ' + newAmount}">NAD 15,000</strong></p>
+    </div>
+    <div class="info-box">
+      <h3>Time remaining</h3>
+      <p th:text="${timeRemaining}">2 hours 30 minutes</p>
+    </div>
+
+    <a th:href="${auctionRoomUrl}" class="cta">Bid again before it closes →</a>
+
+    <p style="font-size:13px;color:#888;">
+      Tip: Set a proxy bid ceiling so the system autobids for you.
+    </p>
+  </div>
+  <div class="footer">
+    <p>© <span th:text="${year}">2025</span> <span th:text="${brandName}">StaySphere</span></p>
+  </div>
+</div>
+</body>
+</html>

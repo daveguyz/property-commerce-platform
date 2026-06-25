@@ -79,7 +79,7 @@ public class EmailService {
                 NotificationLog.NotificationType.WELCOME);
     }
 
-    private void sendEmail(String to, String userId, String bookingId, String templateName,
+    public void sendEmail(String to, String userId, String bookingId, String templateName,
             String subject, Map<String, Object> vars,
             NotificationLog.NotificationType type) {
 
