@@ -64,6 +64,15 @@ staysphere:
 
 stripe:
   secret-key: ${STRIPE_SECRET_KEY:sk_test_placeholder}
+  kyc-webhook-secret: ${STRIPE_KYC_WEBHOOK_SECRET:}
+
+anthropic:
+  api:
+    key: ${ANTHROPIC_API_KEY:}
+
+staysphere:
+  frontend:
+    url: ${FRONTEND_URL:https://staysphere-aos.myshopify.com}
 
 logging:
   level:

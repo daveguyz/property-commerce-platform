@@ -15,6 +15,7 @@ public class AuctionSchedulerService {
 
     private final AuctionLotRepository lotRepository;
     private final AuctionLotService lotService;
+    private final AuctionSettlementService settlementService;
 
     /** Every 10 seconds: open any lots whose startsAt has passed. */
     @Scheduled(fixedRate = 10_000)
@@ -38,6 +39,13 @@ public class AuctionSchedulerService {
             try {
                 lotService.closeLot(lot.getId());
                 log.info("[Scheduler] Closed lot {}", lot.getId());
+                // Immediately trigger settlement (deposit capture, release, notifications)
+                try {
+                    settlementService.settle(lot.getId());
+                    log.info("[Scheduler] Settled lot {}", lot.getId());
+                } catch (Exception se) {
+                    log.error("[Scheduler] Settlement failed for lot {}: {}", lot.getId(), se.getMessage());
+                }
             } catch (Exception e) {
                 log.error("[Scheduler] Failed to close lot {}: {}", lot.getId(), e.getMessage());
             }

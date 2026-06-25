@@ -1,5 +1,6 @@
 package com.staysphere.auctionservice.exception;
 
+import com.staysphere.auctionservice.service.KycService;
 import com.staysphere.shared.dto.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
@@ -16,6 +17,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ApiResponse<Void>> handleIllegalState(IllegalStateException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.error(ex.getMessage()));
+    }
+
+    /**
+     * KYC required — return 403 + the KYC session URL so the frontend can redirect.
+     * The response body includes userId and lotId so the client knows which flow to start.
+     */
+    @ExceptionHandler(KycService.KycRequiredException.class)
+    public ResponseEntity<ApiResponse<Void>> handleKycRequired(KycService.KycRequiredException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.<Void>builder()
+                        .success(false)
+                        .message(ex.getMessage())
+                        .errors(java.util.List.of("KYC_REQUIRED", "userId=" + ex.getUserId(), "lotId=" + ex.getLotId()))
+                        .timestamp(java.time.LocalDateTime.now())
+                        .build());
     }
 
     @ExceptionHandler(SecurityException.class)

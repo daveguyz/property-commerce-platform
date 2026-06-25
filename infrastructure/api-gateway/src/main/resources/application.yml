@@ -120,3 +120,12 @@ staysphere:
         - id: auction-websocket
           uri: lb:ws://auction-service
           predicates: [ Path=/ws/auction/** ]
+        - id: auction-kyc
+          uri: lb://auction-service
+          predicates: [ Path=/api/v1/kyc/** ]
+
+        - id: auction-admin
+          uri: lb://auction-service
+          predicates: [ Path=/api/v1/admin/auctions/** ]
+          filters:
+            - name: JwtAuthGatewayFilter

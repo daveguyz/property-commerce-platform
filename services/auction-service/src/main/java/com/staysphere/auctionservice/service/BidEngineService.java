@@ -25,6 +25,8 @@ public class BidEngineService {
     private final BidderDepositRepository depositRepository;
     private final AuctionBroadcastService broadcastService;
     private final AntiSnipeService antiSnipeService;
+    private final AiFraudService aiFraudService;
+    private final KycService kycService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final StringRedisTemplate redis;
 
@@ -69,6 +71,13 @@ public class BidEngineService {
             if (!depositHeld) {
                 throw new IllegalStateException("Deposit required before bidding on lot " + lotId);
             }
+        }
+
+        // 3.5. KYC gate — auto-trigger if lot requires KYC or bid exceeds threshold
+        if (Boolean.TRUE.equals(lot.getKycRequired())) {
+            kycService.assertKycIfRequired(lotId, bidderId, amount);
+        } else if (lot.getKycThresholdAmount() != null && amount.compareTo(lot.getKycThresholdAmount()) >= 0) {
+            kycService.assertKycIfRequired(lotId, bidderId, amount);
         }
 
         // 4. Minimum bid validation
@@ -136,6 +145,22 @@ public class BidEngineService {
                 .currency(lot.getCurrency())
                 .build();
         Bid saved = bidRepository.save(newBid);
+
+        // 6.5. Async fraud assessment (non-blocking — flag for review, don't reject)
+        try {
+            AiFraudService.FraudAssessment fraud = aiFraudService.assessBid(saved, lot.getId(), lot.getTotalBids());
+            if (fraud.score() > 0.0) {
+                saved.setFraudScore(BigDecimal.valueOf(fraud.score()));
+                saved.setFlaggedForReview(fraud.flagForReview());
+                bidRepository.save(saved);
+                if (fraud.flagForReview()) {
+                    log.warn("[BidEngine] Bid {} flagged by AI fraud: score={:.3f} reason={}",
+                            saved.getId(), fraud.score(), fraud.reasoning());
+                }
+            }
+        } catch (Exception e) {
+            log.debug("[BidEngine] Fraud check failed (non-blocking): {}", e.getMessage());
+        }
 
         // Update lot state (denormalized)
         lot.setCurrentBidAmount(amount);
