@@ -129,3 +129,16 @@ staysphere:
           predicates: [ Path=/api/v1/admin/auctions/** ]
           filters:
             - name: JwtAuthGatewayFilter
+        - id: auction-search
+          uri: lb://search-service
+          predicates: [ Path=/api/v1/search/auctions/** ]
+
+        - id: auction-mux-webhook
+          uri: lb://auction-service
+          predicates: [ Path=/api/v1/auctions/stream/mux-webhook ]
+
+        - id: auction-stream
+          uri: lb://auction-service
+          predicates: [ Path=/api/v1/auctions/*/stream, /api/v1/auctions/*/stream/youtube ]
+          filters:
+            - name: JwtAuthGatewayFilter

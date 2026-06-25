@@ -38,6 +38,9 @@ spring:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+    elasticsearch:
+      repositories:
+        enabled: false   # auction-service does not own ES — search-service does
 
 server:
   port: ${PORT:8094}
@@ -61,6 +64,8 @@ management:
 staysphere:
   jwt:
     secret: ${JWT_SECRET:base64_encoded_256_bit_secret_key_replace_in_production}
+  frontend:
+    url: ${FRONTEND_URL:https://staysphere-aos.myshopify.com}
 
 stripe:
   secret-key: ${STRIPE_SECRET_KEY:sk_test_placeholder}
@@ -70,9 +75,10 @@ anthropic:
   api:
     key: ${ANTHROPIC_API_KEY:}
 
-staysphere:
-  frontend:
-    url: ${FRONTEND_URL:https://staysphere-aos.myshopify.com}
+
+mux:
+  token-id: ${MUX_TOKEN_ID:}
+  token-secret: ${MUX_TOKEN_SECRET:}
 
 logging:
   level:

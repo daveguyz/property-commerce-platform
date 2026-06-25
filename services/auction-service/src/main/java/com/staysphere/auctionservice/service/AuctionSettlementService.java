@@ -3,6 +3,7 @@ package com.staysphere.auctionservice.service;
 import com.staysphere.auctionservice.model.*;
 import com.staysphere.auctionservice.repository.*;
 import com.staysphere.auctionservice.websocket.AuctionBroadcastService;
+import com.staysphere.auctionservice.service.LivestreamService;
 import com.staysphere.shared.events.AuctionLotClosedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ public class AuctionSettlementService {
     private final SealedBidRevealService sealedBidRevealService;
     private final ReverseBidService reverseBidService;
     private final AuctionBroadcastService broadcastService;
+    private final LivestreamService livestreamService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Transactional
@@ -95,6 +97,13 @@ public class AuctionSettlementService {
         // ── Step 4: Mark lot as SETTLED ──────────────────────────────────
         lot.setStatus(AuctionLotStatus.SETTLED);
         lotRepository.save(lot);
+
+        // Clean up livestream resources after settlement
+        try {
+            livestreamService.deleteStream(lotId);
+        } catch (Exception e) {
+            log.debug("[Settlement] Livestream cleanup skipped for lot {}: {}", lotId, e.getMessage());
+        }
 
         // ── Step 5: Kafka event (triggers notification emails) ───────────
         kafkaTemplate.send(AuctionLotClosedEvent.TOPIC, AuctionLotClosedEvent.builder()

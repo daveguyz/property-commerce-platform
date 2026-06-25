@@ -23,9 +23,15 @@ public class SecurityConfig {
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         // Public: browse lots, view bid history, join room (WS returns state but bidding requires auth)
-                        .requestMatchers("/api/v1/auctions", "/api/v1/auctions/live",
-                                         "/api/v1/auctions/*/bids", "/actuator/health",
-                                         "/api/v1/kyc/webhook").permitAll() // Stripe calls this without JWT
+                        .requestMatchers(
+                                "/api/v1/auctions",
+                                "/api/v1/auctions/live",
+                                "/api/v1/auctions/*/bids",
+                                "/api/v1/auctions/*/stream",        // public viewer embed URL
+                                "/api/v1/auctions/stream/mux-webhook", // Mux calls without JWT
+                                "/api/v1/kyc/webhook",              // Stripe calls without JWT
+                                "/actuator/health"
+                        ).permitAll()
                         .requestMatchers("/ws/auction/**").permitAll()
                         // Everything else requires a valid JWT
                         .anyRequest().authenticated()

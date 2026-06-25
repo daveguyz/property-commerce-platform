@@ -23,3 +23,6 @@ public class SearchController {
         return ResponseEntity.ok(ApiResponse.success(null, "Property indexed"));
     }
 }
+
+// NOTE: AuctionSearchController is a separate controller in the same package.
+// Added in Phase C — see AuctionSearchController.java
