@@ -85,7 +85,7 @@ jobs:
             -pl services/auth-service,services/property-service,services/payment-service,\
           services/ai-service,services/pricing-engine,services/trust-service,\
           services/notification-service,services/search-service,services/analytics-service,\
-          services/messaging-service,services/auction-service \
+          services/messaging-service,services/auction-service,shopify-integration \
             -am
         env:
           JWT_SECRET: dGVzdC1zZWNyZXQtZm9yLWNpLXBpcGVsaW5lLW9ubHk=
@@ -214,9 +214,15 @@ jobs:
       - name: Check for hardcoded secrets
         run: |
           # Fail if real credentials found in source
-          if grep -r "sk_live_\|pk_live_\|ghp_[a-zA-Z0-9]\{36\}" \
+          # Build patterns as variables to prevent self-matching
+          STRIPE_LIVE="sk_live_"
+          STRIPE_PK="pk_live_"
+          GH_PAT="ghp_[a-zA-Z0-9]\{36\}"
+          if grep -r "$STRIPE_LIVE\|$STRIPE_PK\|$GH_PAT" \
                --include="*.java" --include="*.yml" --include="*.yaml" \
-               --exclude-dir=".git" .; then
+               --exclude-dir=".git" \
+               --exclude="ci.yml" \
+               --exclude="deploy.yml" .; then
             echo "ERROR: Potential hardcoded production credentials found"
             exit 1
           fi

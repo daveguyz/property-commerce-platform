@@ -1,40 +1,48 @@
-# Multi-stage build — builder stage
+# ============================================================
+# StaySphere AOS — shopify-integration
+# Multi-stage build: packages theme files from classpath
+# then builds the Spring Boot JAR.
+# ============================================================
 FROM eclipse-temurin:21-jdk-alpine AS builder
 WORKDIR /workspace
 
-# Copy Maven wrapper and root POM for dependency caching
+# Maven wrapper + root POM
 COPY mvnw .
 COPY .mvn .mvn
 COPY pom.xml .
 
-# Copy shared modules
-COPY shared/common-dto/pom.xml shared/common-dto/pom.xml
-COPY shared/common-events/pom.xml shared/common-events/pom.xml
+# Shared module POMs (dependency caching layer)
+COPY shared/common-dto/pom.xml     shared/common-dto/pom.xml
+COPY shared/common-events/pom.xml  shared/common-events/pom.xml
 COPY shared/common-security/pom.xml shared/common-security/pom.xml
 
-# Copy this service pom
-COPY services/shopify-integration/pom.xml services/shopify-integration/pom.xml
+# shopify-integration POM (note: root-level module, not under services/)
+COPY shopify-integration/pom.xml shopify-integration/pom.xml
 
-# Download dependencies (cached layer)
-RUN ./mvnw dependency:go-offline -pl shared/common-dto,shared/common-events,shared/common-security,services/shopify-integration -am -q 2>/dev/null || true
+# Download deps (cached)
+RUN ./mvnw dependency:go-offline \
+      -pl shared/common-dto,shared/common-events,shared/common-security,shopify-integration \
+      -am -q 2>/dev/null || true
 
 # Copy source
-COPY shared/ shared/
-COPY services/shopify-integration/ services/shopify-integration/
+COPY shared/             shared/
+COPY shopify-integration/ shopify-integration/
 
-# Build
-RUN ./mvnw package -pl services/shopify-integration -am -DskipTests -q
+# Build (theme-files/ must be populated before this step in CI)
+RUN ./mvnw package -pl shopify-integration -am -DskipTests -q
 
-# Runtime stage
+# ── Runtime ────────────────────────────────────────────────
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Security: run as non-root
 RUN addgroup -S staysphere && adduser -S staysphere -G staysphere
 USER staysphere
 
-# Copy layered jar
-COPY --from=builder /workspace/services/shopify-integration/target/*.jar app.jar
+COPY --from=builder /workspace/shopify-integration/target/*.jar app.jar
 
-EXPOSE 8080
-ENTRYPOINT ["java",   "-XX:+UseContainerSupport",   "-XX:MaxRAMPercentage=75.0",   "-Djava.security.egd=file:/dev/./urandom",   "-jar", "app.jar"]
+EXPOSE 8090
+ENTRYPOINT ["java", \
+  "-XX:+UseContainerSupport", \
+  "-XX:MaxRAMPercentage=75.0", \
+  "-Djava.security.egd=file:/dev/./urandom", \
+  "-jar", "app.jar"]

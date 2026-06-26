@@ -468,6 +468,22 @@ services:
     networks: [staysphere-net]
     restart: unless-stopped
 
+  db-shopify:
+    image: postgres:16-alpine
+    container_name: db-shopify
+    environment:
+      POSTGRES_DB: staysphere_shopify
+      POSTGRES_USER: staysphere
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-staysphere_secret}
+    volumes: [db-shopify-data:/var/lib/postgresql/data]
+    networks: [staysphere-net]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U staysphere"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   shopify-integration:
     build:
       context: .
@@ -478,13 +494,24 @@ services:
         condition: service_healthy
       service-discovery:
         condition: service_healthy
+      db-shopify:
+        condition: service_healthy
     environment:
       <<: *common-env
       PORT: 8090
+      DB_URL: jdbc:postgresql://db-shopify:5432/staysphere_shopify
+      DB_USERNAME: staysphere
+      DB_PASSWORD: ${DB_PASSWORD:-staysphere_secret}
       SHOPIFY_STORE_URL: ${SHOPIFY_STORE_URL}
       SHOPIFY_ACCESS_TOKEN: ${SHOPIFY_ACCESS_TOKEN}
       SHOPIFY_STOREFRONT_TOKEN: ${SHOPIFY_STOREFRONT_TOKEN}
       SHOPIFY_WEBHOOK_SECRET: ${SHOPIFY_WEBHOOK_SECRET}
+      SHOPIFY_API_KEY: ${SHOPIFY_API_KEY:-}
+      SHOPIFY_API_SECRET: ${SHOPIFY_API_SECRET:-}
+      SHOPIFY_OAUTH_REDIRECT_URI: ${SHOPIFY_OAUTH_REDIRECT_URI:-}
+      APP_PUBLIC_URL: ${APP_PUBLIC_URL:-}
+      API_GATEWAY_URL: ${API_GATEWAY_URL:-}
+      FRONTEND_URL: ${FRONTEND_URL:-}
     ports: ["8090:8090"]
     networks: [staysphere-net]
     restart: unless-stopped
@@ -654,5 +681,6 @@ volumes:
   db-analytics-data:
   db-messaging-data:
   db-auction-data:
+  db-shopify-data:
   prometheus-data:
   grafana-data:
