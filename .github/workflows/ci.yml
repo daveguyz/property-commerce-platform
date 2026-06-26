@@ -99,6 +99,28 @@ jobs:
           path: '**/target/surefire-reports/*.xml'
           retention-days: 14
 
+  # ── Theme bundling smoke test ──────────────────────────────────
+  theme-bundle:
+    name: Theme bundle smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract theme files into shopify-integration resources
+        run: |
+          git fetch origin theme || true
+          if git rev-parse origin/theme >/dev/null 2>&1; then
+            mkdir -p shopify-integration/src/main/resources/theme-files
+            git archive origin/theme |               tar -x -C shopify-integration/src/main/resources/theme-files/
+            COUNT=$(find shopify-integration/src/main/resources/theme-files -type f | wc -l)
+            echo "✅ Bundled $COUNT theme files"
+          else
+            echo "theme branch not available — skipping"
+          fi
+
   # ── Shopify theme check ─────────────────────────────────────
   theme-check:
     name: Shopify Theme Check

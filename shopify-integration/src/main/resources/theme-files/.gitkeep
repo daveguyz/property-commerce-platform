@@ -1,0 +1,6 @@
+# This directory is populated at build time by the CI/CD pipeline.
+# The deploy workflow checks out the shopify-theme-branch and copies
+# all theme files here before mvn package runs.
+#
+# To test locally:
+#   git archive shopify-theme-branch | tar -x -C shopify-integration/src/main/resources/theme-files/
