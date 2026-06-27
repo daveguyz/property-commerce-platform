@@ -5,7 +5,9 @@ import com.staysphere.auctionservice.model.Bid;
 import com.staysphere.auctionservice.service.AuctionPresenceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.staysphere.auctionservice.model.LotQuestion;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -106,5 +108,35 @@ public class AuctionBroadcastService {
     public void broadcastPresenceUpdate(String lotId, long viewerCount) {
         messaging.convertAndSend("/topic/auction/" + lotId,
                 Map.of("type", "PRESENCE_UPDATE", "lotId", lotId, "viewers", viewerCount));
+    }
+    /**
+     * Broadcast a public answer to all room subscribers.
+     * Topic: /topic/auction/{lotId}
+     * Message type: QA_PUBLIC_ANSWER
+     */
+    public void broadcastPublicAnswer(String lotId, LotQuestion question) {
+        messagingTemplate.convertAndSend(
+                "/topic/auction/" + lotId,
+                java.util.Map.of(
+                        "type",               "QA_PUBLIC_ANSWER",
+                        "questionId",         question.getId(),
+                        "bidderDisplayName",  question.getBidderDisplayName(),
+                        "questionContent",    question.getContent(),
+                        "response",           question.getResponse(),
+                        "respondedAt",        question.getRespondedAt().toString()
+                )
+        );
+    }
+
+    /**
+     * Send a message to a specific user's private queue.
+     * Uses the SimpMessagingTemplate convertAndSendToUser pattern.
+     *
+     * @param userId      the recipient user ID (same as Spring Security principal.getName())
+     * @param destination e.g. "/queue/auction-{lotId}-qa"
+     * @param payload     the message payload
+     */
+    public void sendToUser(String userId, String destination, Object payload) {
+        messagingTemplate.convertAndSendToUser(userId, destination, payload);
     }
 }

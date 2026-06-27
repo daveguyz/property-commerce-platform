@@ -1,7 +1,9 @@
 package com.staysphere.auctionservice.websocket;
 
 import com.staysphere.auctionservice.model.Bid;
+import com.staysphere.auctionservice.model.LotQuestion;
 import com.staysphere.auctionservice.service.*;
+import com.staysphere.auctionservice.websocket.AuctionBroadcastService;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.*;
@@ -20,6 +22,8 @@ public class AuctionWebSocketController {
     private final DutchAuctionService dutchAuctionService;
     private final AuctionPresenceService presenceService;
     private final AuctionLotService lotService;
+    private final LotQuestionService questionService;
+    private final AuctionBroadcastService broadcastService;
 
     /**
      * Client sends: SEND /ws/auction/{lotId}/bid
@@ -93,6 +97,113 @@ public class AuctionWebSocketController {
                 "endsAt",        lot.getScheduledEndsAt().toString(),
                 "viewers",       viewers
         );
+    }
+
+
+    /**
+     * Bidder sends a question: SEND /ws/auction/{lotId}/question
+     * Body: { "content": "...", "category": "GENERAL" }
+     *
+     * On receipt:
+     *   1. Persists the question
+     *   2. Pushes private receipt confirmation to /user/queue/auction-{lotId}-qa
+     *   3. Pushes notification to /user/queue/auctioneer-{lotId}-queue
+     */
+    @MessageMapping("/auction/{lotId}/question")
+    public void submitQuestion(@DestinationVariable String lotId,
+                               @Payload SubmitQuestionMessage msg,
+                               Principal principal,
+                               SimpMessageHeaderAccessor headerAccessor) {
+        if (principal == null) return;
+        String bidderId = principal.getName();
+        String email    = headerAccessor.getFirstNativeHeader("X-User-Email");
+        if (email == null) email = "";
+
+        try {
+            LotQuestion question = questionService.submitQuestion(
+                    lotId, bidderId, email, msg.getContent(), msg.getCategory());
+
+            // 1. Private receipt to bidder
+            broadcastService.sendToUser(bidderId,
+                    "/queue/auction-" + lotId + "-qa",
+                    java.util.Map.of(
+                            "type",       "QA_RECEIVED",
+                            "questionId", question.getId(),
+                            "message",    "Question submitted — you'll be notified when answered"
+                    ));
+
+            // 2. Push to auctioneer queue (they may be on /pages/auctioneer-dashboard)
+            String auctioneerId = lotService.getLot(lotId).getAuctioneerId();
+            if (auctioneerId != null) {
+                broadcastService.sendToUser(auctioneerId,
+                        "/queue/auctioneer-" + lotId + "-queue",
+                        java.util.Map.of(
+                                "type",             "QA_RECEIVED",
+                                "questionId",       question.getId(),
+                                "bidderDisplayName", question.getBidderDisplayName(),
+                                "category",         question.getCategory().name(),
+                                "contentPreview",   question.getContent().substring(0, Math.min(80, question.getContent().length())),
+                                "submittedAt",      question.getSubmittedAt().toString()
+                        ));
+            }
+            log.info("[WS-QA] Lot {} — question {} submitted by {}", lotId, question.getId(), bidderId);
+
+        } catch (Exception e) {
+            log.warn("[WS-QA] Question rejected on lot {} by {}: {}", lotId, bidderId, e.getMessage());
+        }
+    }
+
+    /**
+     * Auctioneer answers: SEND /ws/auction/{lotId}/answer
+     * Body: { "questionId": "...", "response": "...", "answerPublicly": true/false }
+     *
+     * If answerPublicly = false: sends to /user/queue/qa-answer-{bidderId}
+     * If answerPublicly = true:  broadcasts to /topic/auction/{lotId} with type QA_PUBLIC_ANSWER
+     */
+    @MessageMapping("/auction/{lotId}/answer")
+    public void answerQuestion(@DestinationVariable String lotId,
+                               @Payload AnswerQuestionMessage msg,
+                               Principal principal) {
+        if (principal == null) return;
+        String callerId = principal.getName();
+
+        try {
+            LotQuestion answered = questionService.answerQuestion(
+                    msg.getQuestionId(), callerId, msg.getResponse(), msg.isAnswerPublicly());
+
+            if (msg.isAnswerPublicly()) {
+                // Broadcast to all room subscribers
+                broadcastService.broadcastPublicAnswer(lotId, answered);
+            } else {
+                // Private answer — only the asking bidder sees it
+                broadcastService.sendToUser(answered.getBidderId(),
+                        "/queue/qa-answer-" + answered.getBidderId(),
+                        java.util.Map.of(
+                                "type",        "QA_ANSWER",
+                                "questionId",  answered.getId(),
+                                "response",    answered.getResponse(),
+                                "respondedAt", answered.getRespondedAt().toString()
+                        ));
+            }
+            log.info("[WS-QA] Lot {} — question {} answered by {} (public={})",
+                    lotId, msg.getQuestionId(), callerId, msg.isAnswerPublicly());
+
+        } catch (Exception e) {
+            log.warn("[WS-QA] Answer rejected on lot {} by {}: {}", lotId, callerId, e.getMessage());
+        }
+    }
+
+    @lombok.Data @NoArgsConstructor @AllArgsConstructor
+    public static class SubmitQuestionMessage {
+        private String content;
+        private String category;
+    }
+
+    @lombok.Data @NoArgsConstructor @AllArgsConstructor
+    public static class AnswerQuestionMessage {
+        private String  questionId;
+        private String  response;
+        private boolean answerPublicly;
     }
 
     @Data @NoArgsConstructor @AllArgsConstructor

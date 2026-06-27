@@ -106,4 +106,117 @@ public class AuctionEventListener {
     public void onLotExtended(AuctionLotExtendedEvent event) {
         log.debug("[Notification] Lot {} extended (no email — WS handles this)", event.getAuctionLotId());
     }
+    // ─── Lot Q&A events ───────────────────────────────────────────────────
+
+    /**
+     * New question received — notify the auctioneer.
+     * Email is debounced per lot (5-minute window) to prevent inbox flood
+     * during busy auctions. TODO: implement debounce via Redis key with TTL.
+     */
+    @KafkaListener(topics = LotQuestionSubmittedEvent.TOPIC,
+                   groupId = "notification-service-group")
+    public void onQuestionSubmitted(LotQuestionSubmittedEvent event) {
+        try {
+            String recipientId = event.getAuctioneerId() != null
+                    ? event.getAuctioneerId() : event.getSellerId();
+            if (recipientId == null) return;
+
+            // Resolve recipient email via auth-service (simplified: use event data if available)
+            String recipientEmail = resolveEmail(recipientId);
+            if (recipientEmail == null || recipientEmail.isBlank()) return;
+
+            String dashboardUrl = baseUrl + "/pages/auctioneer-dashboard?lot=" + event.getLotId();
+
+            emailService.sendTemplatedEmail(
+                    recipientEmail,
+                    "New question on your lot",
+                    "question-received",
+                    java.util.Map.of(
+                            "lotTitle",         "Lot " + event.getLotId(),
+                            "bidderDisplayName", event.getBidderDisplayName(),
+                            "category",         event.getCategory(),
+                            "contentPreview",   event.getContentPreview(),
+                            "submittedAt",      event.getSubmittedAt().toString(),
+                            "dashboardUrl",     dashboardUrl
+                    )
+            );
+            log.info("[Notification] question-received sent to auctioneer for lot {}",
+                    event.getLotId());
+        } catch (Exception e) {
+            log.error("[Notification] Failed to send question-received for {}: {}",
+                    event.getQuestionId(), e.getMessage());
+        }
+    }
+
+    /**
+     * Question answered privately — notify the bidder.
+     * Not fired for public answers (they are visible in the room).
+     */
+    @KafkaListener(topics = LotQuestionAnsweredEvent.TOPIC,
+                   groupId = "notification-service-group")
+    public void onQuestionAnswered(LotQuestionAnsweredEvent event) {
+        if (event.isAnsweredPublicly()) return; // visible in room — no email needed
+        try {
+            if (event.getBidderEmail() == null || event.getBidderEmail().isBlank()) return;
+
+            String auctionRoomUrl = baseUrl + "/pages/auction-room?lot=" + event.getLotId();
+            emailService.sendTemplatedEmail(
+                    event.getBidderEmail(),
+                    "Your question has been answered",
+                    "question-answered",
+                    java.util.Map.of(
+                            "lotTitle",       "Lot " + event.getLotId(),
+                            "questionContent", "Your question",
+                            "response",       event.getResponsePreview(),
+                            "auctionRoomUrl", auctionRoomUrl
+                    )
+            );
+            log.info("[Notification] question-answered sent to bidder {} for lot {}",
+                    event.getBidderId(), event.getLotId());
+        } catch (Exception e) {
+            log.error("[Notification] Failed to send question-answered for {}: {}",
+                    event.getQuestionId(), e.getMessage());
+        }
+    }
+
+    /**
+     * Question escalated to support — notify the bidder with ticket reference.
+     */
+    @KafkaListener(topics = LotQuestionEscalatedEvent.TOPIC,
+                   groupId = "notification-service-group")
+    public void onQuestionEscalated(LotQuestionEscalatedEvent event) {
+        try {
+            if (event.getBidderEmail() == null || event.getBidderEmail().isBlank()) return;
+
+            String ticketId  = event.getQuestionId().substring(0, 8).toUpperCase();
+            String messagesUrl = baseUrl + "/pages/messages";
+
+            emailService.sendTemplatedEmail(
+                    event.getBidderEmail(),
+                    "Your concern has been escalated — Ref: " + ticketId,
+                    "question-escalated",
+                    java.util.Map.of(
+                            "lotTitle",      "Lot " + event.getLotId(),
+                            "ticketId",      "TKT-" + ticketId,
+                            "responseHours", "24",
+                            "messagesUrl",   messagesUrl
+                    )
+            );
+            log.info("[Notification] question-escalated sent to bidder {} for lot {}",
+                    event.getBidderId(), event.getLotId());
+        } catch (Exception e) {
+            log.error("[Notification] Failed to send question-escalated for {}: {}",
+                    event.getQuestionId(), e.getMessage());
+        }
+    }
+
+    /**
+     * Resolve a user's email from their user ID.
+     * Placeholder — replace with Feign call to auth-service in production.
+     */
+    private String resolveEmail(String userId) {
+        // TODO: Feign client to auth-service GET /api/v1/auth/users/{userId}/email
+        return null;
+    }
+
 }
