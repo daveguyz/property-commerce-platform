@@ -27,6 +27,12 @@ spring:
     consumer:
       group-id: shopify-integration-group
       auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.staysphere.shared.events"
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: java.util.Map
 
 server:
   port: ${PORT:8090}

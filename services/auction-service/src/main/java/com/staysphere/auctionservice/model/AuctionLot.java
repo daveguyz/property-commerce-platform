@@ -27,7 +27,10 @@ public class AuctionLot {
     private String propertyId;
 
     @Column(nullable = false)
-    private String sellerId;           // host user ID
+    private String sellerId;           // property owner / listing agent user ID
+
+    @Column(name = "auctioneer_id")
+    private String auctioneerId;       // user who manages the live auction (may differ from seller)
 
     @Column(nullable = false, length = 300)
     private String title;

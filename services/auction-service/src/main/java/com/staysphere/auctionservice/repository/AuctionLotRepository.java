@@ -1,6 +1,7 @@
 package com.staysphere.auctionservice.repository;
 
 import com.staysphere.auctionservice.model.AuctionLot;
+import org.springframework.data.jpa.repository.Query;
 import com.staysphere.auctionservice.model.AuctionLotStatus;
 import com.staysphere.auctionservice.model.AuctionType;
 import org.springframework.data.domain.Page;
@@ -41,4 +42,18 @@ public interface AuctionLotRepository extends JpaRepository<AuctionLot, String> 
     List<AuctionLot> findLotsStartingSoonByType(@Param("type") AuctionType type, @Param("from") LocalDateTime from, @Param("until") LocalDateTime until);
 
     long countByStatus(AuctionLotStatus status);
+
+    // ─── Auctioneer queries (Phase 1) ────────────────────────────────────
+
+    /** All lots assigned to a specific auctioneer, ordered by start time. */
+    Page<AuctionLot> findByAuctioneerIdOrderByStartsAtAsc(String auctioneerId, Pageable pageable);
+
+    /** Active and upcoming lots for an auctioneer (for dashboard State A). */
+    @Query("SELECT l FROM AuctionLot l WHERE l.auctioneerId = :auctioneerId AND l.status IN :statuses ORDER BY l.startsAt ASC")
+    List<AuctionLot> findActiveLotsForAuctioneer(
+            @Param("auctioneerId") String auctioneerId,
+            @Param("statuses") List<AuctionLotStatus> statuses);
+
+    /** Count pending lots for an auctioneer (badge on nav). */
+    long countByAuctioneerIdAndStatusIn(String auctioneerId, List<AuctionLotStatus> statuses);
 }

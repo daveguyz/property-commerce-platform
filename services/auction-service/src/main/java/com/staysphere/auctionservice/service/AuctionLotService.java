@@ -40,7 +40,7 @@ public class AuctionLotService {
     @Transactional
     public AuctionLot publishLot(String lotId, String requesterId) {
         AuctionLot lot = findLotOrThrow(lotId);
-        assertOwner(lot, requesterId);
+        assertSeller(lot, requesterId); // only seller may publish
         if (lot.getStatus() != AuctionLotStatus.DRAFT)
             throw new IllegalStateException("Only DRAFT lots can be published");
         lot.setStatus(AuctionLotStatus.SCHEDULED);
@@ -192,7 +192,7 @@ public class AuctionLotService {
     @Transactional
     public void cancelLot(String lotId, String requesterId) {
         AuctionLot lot = findLotOrThrow(lotId);
-        assertOwner(lot, requesterId);
+        assertSeller(lot, requesterId); // only seller may cancel
         if (lot.getStatus() == AuctionLotStatus.SETTLED)
             throw new IllegalStateException("Cannot cancel a settled lot");
         lot.setStatus(AuctionLotStatus.CANCELLED);
@@ -223,8 +223,24 @@ public class AuctionLotService {
                 .orElseThrow(() -> new IllegalArgumentException("Auction lot not found: " + id));
     }
 
+    /**
+     * Assert the caller is the seller or the assigned auctioneer.
+     * Both roles may update lot details; only the seller can publish/cancel.
+     */
     private void assertOwner(AuctionLot lot, String userId) {
-        if (!lot.getSellerId().equals(userId))
+        boolean isSeller     = lot.getSellerId().equals(userId);
+        boolean isAuctioneer = lot.getAuctioneerId() != null
+                               && lot.getAuctioneerId().equals(userId);
+        if (!isSeller && !isAuctioneer)
             throw new SecurityException("Not authorised to modify lot " + lot.getId());
+    }
+
+    /**
+     * Strict seller-only check used for publish and cancel operations.
+     * The auctioneer may NOT publish or cancel — only the property owner can.
+     */
+    private void assertSeller(AuctionLot lot, String userId) {
+        if (!lot.getSellerId().equals(userId))
+            throw new SecurityException("Only the seller may perform this action on lot " + lot.getId());
     }
 }
