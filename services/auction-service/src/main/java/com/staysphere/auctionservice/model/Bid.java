@@ -79,4 +79,12 @@ public class Bid {
 
     // Sequence within the lot (monotonically increasing, used for tie-breaking)
     private Long bidSequence;
+
+    /**
+     * FK to bidding_credentials — every bid is traceable to the credential
+     * that authorised it. Null for bids placed before Phase 5 was deployed,
+     * or for proxy auto-bids (ip=PROXY_SYSTEM).
+     */
+    @Column(name = "credential_id")
+    private String credentialId;
 }

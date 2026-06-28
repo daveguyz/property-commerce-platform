@@ -3,6 +3,9 @@ package com.staysphere.auctionservice.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.staysphere.auctionservice.model.Bid;
 import com.staysphere.auctionservice.repository.BidRepository;
+import com.staysphere.auctionservice.repository.BiddingCredentialRepository;
+import com.staysphere.auctionservice.model.BiddingCredential;
+import com.staysphere.auctionservice.model.CredentialStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +21,7 @@ import java.util.*;
 public class AiFraudService {
 
     private final BidRepository bidRepository;
+    private final BiddingCredentialRepository credentialRepository;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
@@ -82,17 +86,61 @@ public class AiFraudService {
         if (recentBidCount > 10) score += 0.5;
         else if (recentBidCount > 5) score += 0.2;
 
-        // Rule 3: Proxy bid with ceiling exactly at the lot's reserve price
-        // (suggests insider knowledge of reserve — only flag if very close)
-        // We can't check reserve here without lot context, so skip.
-
-        // Rule 4: "PROXY_SYSTEM" IP means it's an auto-proxy bid — always clean
+        // Rule 3: "PROXY_SYSTEM" IP means it's an auto-proxy bid — always clean
         if ("PROXY_SYSTEM".equals(bid.getIpAddress())) return 0.0;
 
-        // Rule 5: No device fingerprint is mildly suspicious
+        // Rule 4: No device fingerprint is mildly suspicious
         if (bid.getDeviceFingerprint() == null || bid.getDeviceFingerprint().isBlank()) score += 0.1;
 
+        // Rule 5 (Phase 6): Credential-based fraud signals
+        // Check bid count and IP discrepancy against the issuing credential
+        if (bid.getCredentialId() != null) {
+            score += assessCredentialSignals(bid);
+        }
+
         return Math.min(score, 1.0);
+    }
+
+    /**
+     * Phase 6 credential-based fraud signals:
+     *   5a. High bid count used: > 30 bids on one credential suggests wash-trading
+     *   5b. IP discrepancy: bid IP differs from IP at credential issuance
+     *       (VPN switch, account sharing, or credential theft)
+     */
+    private double assessCredentialSignals(Bid bid) {
+        double score = 0.0;
+        try {
+            java.util.Optional<BiddingCredential> credOpt =
+                    credentialRepository.findById(bid.getCredentialId());
+            if (credOpt.isEmpty()) return 0.0;
+
+            BiddingCredential cred = credOpt.get();
+
+            // 5a. High velocity within one credential
+            int bidCount = cred.getBidCountUsed();
+            if (bidCount > 50) score += 0.35;
+            else if (bidCount > 30) score += 0.2;
+            else if (bidCount > 15) score += 0.08;
+
+            // 5b. IP discrepancy — bid IP differs from credential issuance IP
+            String issuedIp  = cred.getIpIssuedTo();
+            String currentIp = bid.getIpAddress();
+            if (issuedIp != null && currentIp != null
+                    && !issuedIp.isBlank() && !currentIp.isBlank()
+                    && !issuedIp.equals(currentIp)) {
+                // Different subnet is suspicious; different country (heuristic) is more so
+                String issuedPrefix  = issuedIp.substring(0, Math.min(8, issuedIp.length()));
+                String currentPrefix = currentIp.substring(0, Math.min(8, currentIp.length()));
+                if (!issuedPrefix.equals(currentPrefix)) {
+                    score += 0.3;
+                    log.debug("[AiFraud] IP discrepancy: issued={} current={} bidder={}",
+                            issuedIp, currentIp, bid.getBidderId());
+                }
+            }
+        } catch (Exception e) {
+            log.debug("[AiFraud] Credential signal check failed (non-blocking): {}", e.getMessage());
+        }
+        return score;
     }
 
     // ─── Claude API calls ─────────────────────────────────────────────────────
@@ -119,6 +167,8 @@ public class AiFraudService {
                 - Total bids on lot so far: %d
                 - Heuristic pre-score: %.3f
                 - Bid sequence: %d
+                - Credential bid count used: %d
+                - IP at credential issuance matches bid IP: %s
                 """,
                 lotId,
                 bid.getAmount(),
@@ -129,7 +179,9 @@ public class AiFraudService {
                 bid.getMsRemainingAtBid(),
                 totalBids,
                 rulesScore,
-                bid.getBidSequence()
+                bid.getBidSequence(),
+                bid.getCredentialId() != null ? enrichCredentialCount(bid.getCredentialId()) : 0,
+                bid.getCredentialId() != null ? checkIpMatch(bid) : "N/A"
         );
 
         String responseText = invokeClaudeApi(systemPrompt, userPrompt, 200);
@@ -170,6 +222,23 @@ public class AiFraudService {
 
         List<Map<String, Object>> content = (List<Map<String, Object>>) response.getBody().get("content");
         return content != null && !content.isEmpty() ? (String) content.get(0).get("text") : "{}";
+    }
+
+    private int enrichCredentialCount(String credentialId) {
+        try {
+            return credentialRepository.findById(credentialId)
+                    .map(BiddingCredential::getBidCountUsed).orElse(0);
+        } catch (Exception e) { return 0; }
+    }
+
+    private String checkIpMatch(Bid bid) {
+        if (bid.getCredentialId() == null) return "N/A";
+        try {
+            return credentialRepository.findById(bid.getCredentialId())
+                    .map(c -> String.valueOf(
+                            c.getIpIssuedTo() != null && c.getIpIssuedTo().equals(bid.getIpAddress())))
+                    .orElse("unknown");
+        } catch (Exception e) { return "unknown"; }
     }
 
     @SuppressWarnings("unchecked")

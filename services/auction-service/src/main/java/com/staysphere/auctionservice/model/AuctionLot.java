@@ -153,6 +153,14 @@ public class AuctionLot {
     private String propertyAddress;
     private String propertyCity;
 
+    /**
+     * Maximum number of distinct credentialed bidders allowed on this lot.
+     * Null = unlimited. Used for exclusive/invite-only auctions.
+     * Enforced by BidEngineService at bid placement time.
+     */
+    @Column(name = "max_bidders_allowed")
+    private Integer maxBiddersAllowed;
+
     @CreationTimestamp private LocalDateTime createdAt;
     @UpdateTimestamp  private LocalDateTime updatedAt;
 

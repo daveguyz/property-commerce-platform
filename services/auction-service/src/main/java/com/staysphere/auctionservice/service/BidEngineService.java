@@ -2,6 +2,8 @@ package com.staysphere.auctionservice.service;
 
 import com.staysphere.auctionservice.model.*;
 import com.staysphere.auctionservice.model.BiddingCredential;
+import com.staysphere.auctionservice.repository.BiddingCredentialRepository;
+import com.staysphere.auctionservice.model.CredentialStatus;
 import com.staysphere.auctionservice.repository.*;
 import com.staysphere.auctionservice.websocket.AuctionBroadcastService;
 import com.staysphere.shared.events.AuctionBidPlacedEvent;
@@ -31,6 +33,7 @@ public class BidEngineService {
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final StringRedisTemplate redis;
     private final BiddingCredentialService credentialService;
+    private final BiddingCredentialRepository credentialRepository;
 
     // Redis key pattern for bid locks — prevents race conditions on concurrent bids
     private static final String BID_LOCK_KEY  = "auction:lock:lot:%s";
@@ -99,6 +102,24 @@ public class BidEngineService {
             kycService.assertKycIfRequired(lotId, bidderId, amount);
         }
 
+        // 3.7. maxBiddersAllowed cap — for exclusive/invite-only auctions
+        if (lot.getMaxBiddersAllowed() != null && lot.getMaxBiddersAllowed() > 0) {
+            long activeBidders = credentialRepository
+                    .findByLotIdAndStatus(lot.getId(), CredentialStatus.ACTIVE)
+                    .stream()
+                    .filter(c -> !c.getBidderId().equals(bidderId)) // exclude self
+                    .count();
+            // +1 for this bidder — if self not yet in set
+            boolean selfHasCred = credentialRepository
+                    .existsByLotIdAndBidderIdAndStatus(lot.getId(), bidderId, CredentialStatus.ACTIVE);
+            long totalWithSelf = activeBidders + (selfHasCred ? 1 : 0);
+            if (!selfHasCred && totalWithSelf >= lot.getMaxBiddersAllowed()) {
+                throw new IllegalStateException(
+                        "MAX_BIDDERS_REACHED: This auction is limited to "
+                        + lot.getMaxBiddersAllowed() + " bidders");
+            }
+        }
+
         // 4. Minimum bid validation
         BigDecimal minimumAcceptable = computeMinimumBid(lot);
         if (amount.compareTo(minimumAcceptable) < 0) {
@@ -121,7 +142,7 @@ public class BidEngineService {
 
         try {
             return processBidUnderLock(lot, bidderId, bidderEmail, amount, proxyCeiling,
-                    ipAddress, deviceFingerprint, userAgent);
+                    ipAddress, deviceFingerprint, userAgent, credentialToken);
         } finally {
             // Release lock only if we still own it (prevents releasing another thread's lock)
             String currentLockValue = redis.opsForValue().get(lockKey);
@@ -133,7 +154,8 @@ public class BidEngineService {
 
     private Bid processBidUnderLock(AuctionLot lot, String bidderId, String bidderEmail,
                                     BigDecimal amount, BigDecimal proxyCeiling,
-                                    String ip, String fingerprint, String ua) {
+                                    String ip, String fingerprint, String ua,
+                                    String credentialToken) {
         long seq = bidRepository.nextBidSequence(lot.getId());
         long msRemaining = computeMsRemaining(lot);
 
@@ -147,6 +169,15 @@ public class BidEngineService {
             b.setOutbidAt(LocalDateTime.now());
         });
         bidRepository.saveAll(previousActive);
+
+        // Resolve credential ID for audit trail
+        String credentialId = null;
+        if (credentialToken != null && !credentialToken.isBlank()) {
+            credentialId = credentialRepository
+                    .findByTokenHash(BiddingCredentialService.sha256hex(credentialToken))
+                    .map(BiddingCredential::getId)
+                    .orElse(null);
+        }
 
         // Save the new winning bid
         Bid newBid = Bid.builder()
@@ -162,6 +193,7 @@ public class BidEngineService {
                 .msRemainingAtBid(msRemaining)
                 .bidSequence(seq)
                 .currency(lot.getCurrency())
+                .credentialId(credentialId)  // Phase 6 audit trail
                 .build();
         Bid saved = bidRepository.save(newBid);
 
