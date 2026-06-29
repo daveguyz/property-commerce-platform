@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: pricing-engine
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/propertycommerce_pricing}
+    username: ${DB_USER:propertycommerce}
+    password: ${DB_PASS:propertycommerce_secret}
+    hikari:
+      maximum-pool-size: 5
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+server:
+  port: ${PORT:8085}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+propertycommerce:
+  jwt:
+    secret: ${JWT_SECRET:base64_encoded_256_bit_secret_key_replace_in_production}

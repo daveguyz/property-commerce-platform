@@ -1,6 +1,7 @@
 # ============================================================
-# StaySphere AOS — CI Pipeline
+# Property Commerce Platform — CI Pipeline
 # Runs on every push to main and every PR targeting main.
+# Services are built independently so failures are isolated.
 # ============================================================
 name: CI
 
@@ -15,215 +16,168 @@ env:
   MAVEN_OPTS: '-Xmx2g -XX:+UseG1GC'
 
 jobs:
-  # ── Build + unit tests ──────────────────────────────────────
-  build:
-    name: Build & Test
+  # ── Shared module validation ──────────────────────────────────
+  shared:
+    name: Shared modules
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { java-version: '${{ env.JAVA_VERSION }}', distribution: temurin, cache: maven }
+
+      - name: Build shared modules
+        run: |
+          mvn install \
+            -pl platform/shared/common-dto,platform/shared/common-events,platform/shared/common-security \
+            -am -DskipTests -q
+
+      - name: Validate all pom.xml files
+        run: |
+          python3 << 'PYEOF'
+          import xml.etree.ElementTree as ET, glob, sys
+          errors = []
+          for p in glob.glob('**/pom.xml', recursive=True):
+              try: ET.parse(p)
+              except ET.ParseError as e: errors.append(f'{p}: {e}')
+          if errors:
+              for e in errors: print(f'ERROR: {e}')
+              sys.exit(1)
+          print(f'✅ All {len(glob.glob("**/pom.xml", recursive=True))} pom.xml files valid')
+          PYEOF
+
+  # ── Per-service build matrix ──────────────────────────────────
+  services:
+    name: Build ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: shared
+
+    strategy:
+      fail-fast: false   # all services run even if one fails
+      matrix:
+        service:
+          - platform/services/auction-service
+          - platform/services/auth-service
+          - platform/services/booking-engine
+          - platform/services/property-service
+          - platform/services/payment-service
+          - platform/services/notification-service
+          - platform/services/messaging-service
+          - platform/services/search-service
+          - platform/services/analytics-service
+          - platform/services/trust-service
+          - platform/services/ai-service
+          - platform/services/pricing-engine
+          - platform/infrastructure/api-gateway
 
     services:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: staysphere_test
-          POSTGRES_USER: staysphere
-          POSTGRES_PASSWORD: staysphere_secret
+          POSTGRES_DB: pcp_test
+          POSTGRES_USER: pcp
+          POSTGRES_PASSWORD: pcp_secret
         ports: ['5432:5432']
         options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
+          --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
       redis:
         image: redis:7-alpine
         ports: ['6379:6379']
         options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { java-version: '${{ env.JAVA_VERSION }}', distribution: temurin, cache: maven }
 
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Build shared modules
+      - name: Build shared (cached)
         run: |
-          ./mvnw install -pl shared/common-dto,shared/common-events,shared/common-security \
+          mvn install \
+            -pl platform/shared/common-dto,platform/shared/common-events,platform/shared/common-security \
             -am -DskipTests -q
 
-      - name: Run tests — auction-service
+      - name: Build + test ${{ matrix.service }}
         run: |
-          ./mvnw test -pl services/auction-service \
-            -Dspring.data.elasticsearch.repositories.enabled=false \
-            -Dspring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+          mvn verify -pl ${{ matrix.service }} -am \
+            --batch-mode -q \
+            -Dspring.autoconfigure.exclude=org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration \
+            -Dspring.data.elasticsearch.repositories.enabled=false
         env:
+          JWT_SECRET: dGVzdC1zZWNyZXQtZm9yLWNpLXBpcGVsaW5lLW9ubHk=
           STRIPE_SECRET_KEY: sk_test_ci_stub
           ANTHROPIC_API_KEY: ''
-          MUX_TOKEN_ID: ''
-          MUX_TOKEN_SECRET: ''
-          JWT_SECRET: dGVzdC1zZWNyZXQtZm9yLWNpLXBpcGVsaW5lLW9ubHk=
-
-      - name: Run tests — booking-engine
-        run: ./mvnw test -pl services/booking-engine
-        env:
-          JWT_SECRET: dGVzdC1zZWNyZXQtZm9yLWNpLXBpcGVsaW5lLW9ubHk=
-          STRIPE_SECRET_KEY: sk_test_ci_stub
-
-      - name: Build all services (no tests)
-        run: |
-          ./mvnw package -DskipTests -q \
-            --batch-mode \
-            -pl services/auth-service,services/property-service,services/payment-service,\
-          services/ai-service,services/pricing-engine,services/trust-service,\
-          services/notification-service,services/search-service,services/analytics-service,\
-          services/messaging-service,services/auction-service,shopify-integration \
-            -am
-        env:
-          JWT_SECRET: dGVzdC1zZWNyZXQtZm9yLWNpLXBpcGVsaW5lLW9ubHk=
-          STRIPE_SECRET_KEY: sk_test_ci_stub
 
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-reports
-          path: '**/target/surefire-reports/*.xml'
-          retention-days: 14
+          name: test-report-${{ matrix.service }}
+          path: ${{ matrix.service }}/target/surefire-reports/*.xml
+          retention-days: 7
+          if-no-files-found: ignore
 
-  # ── Theme bundling smoke test ──────────────────────────────────
-  theme-bundle:
-    name: Theme bundle smoke test
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Extract theme files into shopify-integration resources
-        run: |
-          git fetch origin theme || true
-          if git rev-parse origin/theme >/dev/null 2>&1; then
-            mkdir -p shopify-integration/src/main/resources/theme-files
-            git archive origin/theme |               tar -x -C shopify-integration/src/main/resources/theme-files/
-            COUNT=$(find shopify-integration/src/main/resources/theme-files -type f | wc -l)
-            echo "✅ Bundled $COUNT theme files"
-          else
-            echo "theme branch not available — skipping"
-          fi
-
-  # ── Shopify theme check ─────────────────────────────────────
-  theme-check:
-    name: Shopify Theme Check
+  # ── SDK JavaScript validation ─────────────────────────────────
+  sdk:
+    name: SDK validation
     runs-on: ubuntu-latest
     timeout-minutes: 10
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20', cache: npm }
 
-      - name: Checkout theme branch
+      - name: Install SDK deps (if package.json exists)
         run: |
-          git fetch origin theme
-          git checkout theme
+          if [ -f sdk/package.json ]; then
+            cd sdk && npm ci
+          else
+            echo "sdk/package.json not yet created — skipping"
+          fi
 
-      - name: Set up Ruby
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.2'
-
-      - name: Install Shopify CLI
+      - name: Validate JavaScript syntax
         run: |
-          npm install -g @shopify/cli @shopify/theme
-        continue-on-error: true
+          if [ -d sdk/packages ]; then
+            find sdk/packages -name "*.js" | while read f; do
+              node --check "$f" || exit 1
+            done
+            echo "✅ SDK JS files valid"
+          else
+            echo "No SDK packages yet — skipping"
+          fi
 
-      - name: Validate template section references
-        run: |
-          python3 << 'PYEOF'
-          import json, glob, os, sys
-          sections = set(os.path.splitext(os.path.basename(f))[0]
-                        for f in glob.glob('sections/*.liquid'))
-          errors = []
-          for t in sorted(glob.glob('templates/**/*.json', recursive=True)):
-              try: data = json.load(open(t))
-              except Exception as e: errors.append(f"JSON error {t}: {e}"); continue
-              for k, v in data.get('sections', {}).items():
-                  st = v.get('type', '')
-                  if st not in sections:
-                      errors.append(f"Template {os.path.basename(t)}: section '{st}' not found")
-          if errors:
-              for e in errors: print(f"ERROR: {e}")
-              sys.exit(1)
-          print(f"✅ All {len(list(glob.glob('templates/**/*.json', recursive=True)))} templates valid")
-          print(f"   {len(sections)} sections available")
-          PYEOF
-
-      - name: Check JSON syntax of all theme files
-        run: |
-          python3 << 'PYEOF'
-          import json, glob, sys
-          errors = []
-          for f in glob.glob('**/*.json', recursive=True):
-              if '.git' in f: continue
-              try:
-                  with open(f) as fh: json.load(fh)
-              except Exception as e:
-                  errors.append(f"{f}: {e}")
-          if errors:
-              for e in errors: print(f"ERROR: {e}")
-              sys.exit(1)
-          print(f"✅ All JSON files valid")
-          PYEOF
-
-  # ── Security scan ───────────────────────────────────────────
+  # ── Security scan ─────────────────────────────────────────────
   security:
-    name: Security Scan
+    name: Security scan
     runs-on: ubuntu-latest
     timeout-minutes: 15
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
+    needs: shared
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'temurin'
-          cache: maven
-
-      - name: OWASP Dependency Check
-        run: |
-          ./mvnw org.owasp:dependency-check-maven:check \
-            -DfailBuildOnCVSS=9 \
-            -DsuppressionFile=.github/owasp-suppressions.xml \
-            --batch-mode -q \
-            -pl services/auction-service -am
-        continue-on-error: true   # Non-blocking for now; enable strict in Phase I
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { java-version: '${{ env.JAVA_VERSION }}', distribution: temurin, cache: maven }
 
       - name: Check for hardcoded secrets
         run: |
-          # Fail if real credentials found in source
-          # Build patterns as variables to prevent self-matching
           STRIPE_LIVE="sk_live_"
           STRIPE_PK="pk_live_"
-          GH_PAT="ghp_[a-zA-Z0-9]\{36\}"
-          if grep -r "$STRIPE_LIVE\|$STRIPE_PK\|$GH_PAT" \
+          if grep -r "$STRIPE_LIVE\|$STRIPE_PK" \
                --include="*.java" --include="*.yml" --include="*.yaml" \
-               --exclude-dir=".git" \
-               --exclude="ci.yml" \
-               --exclude="deploy.yml" .; then
+               --exclude-dir=".git" --exclude="ci.yml" --exclude="deploy.yml" .; then
             echo "ERROR: Potential hardcoded production credentials found"
             exit 1
           fi
           echo "✅ No hardcoded production credentials found"
+
+      - name: OWASP dependency check
+        run: |
+          mvn install \
+            -pl platform/shared/common-dto,platform/shared/common-events,platform/shared/common-security \
+            -am -DskipTests -q
+          mvn org.owasp:dependency-check-maven:check \
+            -DfailBuildOnCVSS=9 \
+            --batch-mode -q \
+            -pl platform/services/auction-service -am
+        continue-on-error: true

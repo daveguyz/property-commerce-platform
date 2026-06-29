@@ -1,0 +1,67 @@
+{
+  "name": "pcp-tools",
+  "displayName": "Property Commerce Platform",
+  "description": "Live auction monitor, API explorer, and code snippets for the Property Commerce Platform",
+  "version": "0.1.0",
+  "publisher": "propertycommerce",
+  "icon": "icon.png",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other", "Snippets"],
+  "keywords": ["property", "auction", "real-estate", "pcp"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "pcp.openMonitor",
+        "title": "PCP: Open Auction Monitor"
+      },
+      {
+        "command": "pcp.openApiExplorer",
+        "title": "PCP: Open API Explorer"
+      }
+    ],
+    "configuration": {
+      "title": "Property Commerce Platform",
+      "properties": {
+        "pcp.apiUrl": {
+          "type": "string",
+          "default": "https://api.propertycommerce.io",
+          "description": "Platform API base URL"
+        },
+        "pcp.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Your tenant API key"
+        },
+        "pcp.tenantId": {
+          "type": "string",
+          "default": "",
+          "description": "Your tenant ID"
+        }
+      }
+    },
+    "snippets": [
+      { "language": "html",       "path": "./snippets/html.json" },
+      { "language": "javascript", "path": "./snippets/js.json" },
+      { "language": "php",        "path": "./snippets/php.json" }
+    ]
+  },
+  "scripts": {
+    "compile":   "tsc -p ./",
+    "watch":     "tsc -watch -p ./",
+    "package":   "vsce package",
+    "publish":   "vsce publish"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "typescript":    "^5.0.0",
+    "@vscode/vsce":  "^2.0.0"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url":  "https://github.com/daveguyz/property-commerce-platform"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "@property-commerce/sdk",
+  "version": "2.0.0",
+  "description": "Embeddable property commerce widgets — auction, booking, listing, account",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "adapters/*",
+    "demo"
+  ],
+  "scripts": {
+    "build":   "vite build",
+    "dev":     "vite",
+    "preview": "vite preview",
+    "lint":    "eslint packages/**/*.js"
+  },
+  "devDependencies": {
+    "vite":    "^5.0.0",
+    "eslint":  "^8.0.0"
+  },
+  "keywords": ["property", "auction", "real-estate", "commerce", "widget"],
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url":  "https://github.com/daveguyz/property-commerce-platform"
+  }
+}

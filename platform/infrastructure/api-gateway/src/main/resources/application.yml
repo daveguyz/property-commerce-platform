@@ -1,0 +1,144 @@
+spring:
+  application:
+    name: api-gateway
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      default-filters:
+        - name: RequestRateLimiter
+        - name: CircuitBreaker
+          args:
+            name: defaultCircuitBreaker
+            fallbackUri: forward:/fallback
+      routes:
+        - id: property-service
+          uri: lb://property-service
+          predicates: [ Path=/api/v1/properties/** ]
+          filters:
+            - name: JwtAuthGatewayFilter
+
+        - id: booking-engine
+          uri: lb://booking-engine
+          predicates: [ Path=/api/v1/bookings/** ]
+          filters:
+            - name: JwtAuthGatewayFilter
+
+        - id: payment-service
+          uri: lb://payment-service
+          predicates: [ Path=/api/v1/payments/** ]
+          filters:
+            - name: JwtAuthGatewayFilter
+
+        - id: ai-service
+          uri: lb://ai-service
+          predicates: [ Path=/api/v1/ai/** ]
+          filters:
+            - name: JwtAuthGatewayFilter
+
+        - id: pricing-engine
+          uri: lb://pricing-engine
+          predicates: [ Path=/api/v1/pricing/** ]
+          filters:
+            - name: JwtAuthGatewayFilter
+
+        - id: trust-service
+          uri: lb://trust-service
+          predicates: [ Path=/api/v1/trust/**, /api/v1/reviews/**, /api/v1/properties/*/reviews ]
+          filters:
+            - name: JwtAuthGatewayFilter
+
+        - id: notification-service
+          uri: lb://notification-service
+          predicates: [ Path=/api/v1/notifications/** ]
+          filters:
+            - name: JwtAuthGatewayFilter
+
+        - id: search-service
+          uri: lb://search-service
+          predicates: [ Path=/api/v1/search/** ]
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 1000ms
+
+server:
+  port: ${PORT:8080}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,gateway
+  endpoint:
+    gateway:
+      enabled: true
+
+propertycommerce:
+  jwt:
+    secret: ${JWT_SECRET:base64_encoded_256_bit_secret_key_replace_in_production}
+
+        - id: auth-service
+          uri: lb://auth-service
+          predicates: [ Path=/api/v1/auth/** ]
+
+        - id: analytics-service
+          uri: lb://analytics-service
+          predicates: [ Path=/api/v1/analytics/** ]
+          filters:
+            - name: JwtAuthGatewayFilter
+
+        - id: messaging-service
+          uri: lb://messaging-service
+          predicates: [ Path=/api/v1/messages/**, /ws/** ]
+          filters:
+            - name: JwtAuthGatewayFilter
+
+        - id: auction-service
+          uri: lb://auction-service
+          predicates: [ Path=/api/v1/auctions/**, /api/v1/auction/** ]
+          filters:
+            - name: JwtAuthGatewayFilter
+
+        - id: auction-public
+          uri: lb://auction-service
+          predicates: [ Path=/api/v1/auctions, /api/v1/auctions/live, /api/v1/auctions/*/bids ]
+
+        - id: auction-websocket
+          uri: lb:ws://auction-service
+          predicates: [ Path=/ws/auction/** ]
+        - id: auction-kyc
+          uri: lb://auction-service
+          predicates: [ Path=/api/v1/kyc/** ]
+
+        - id: auction-admin
+          uri: lb://auction-service
+          predicates: [ Path=/api/v1/admin/auctions/** ]
+          filters:
+            - name: JwtAuthGatewayFilter
+        - id: auction-search
+          uri: lb://search-service
+          predicates: [ Path=/api/v1/search/auctions/** ]
+
+        - id: auction-mux-webhook
+          uri: lb://auction-service
+          predicates: [ Path=/api/v1/auctions/stream/mux-webhook ]
+
+        - id: auction-stream
+          uri: lb://auction-service
+          predicates: [ Path=/api/v1/auctions/*/stream, /api/v1/auctions/*/stream/youtube ]
+          filters:
+            - name: JwtAuthGatewayFilter

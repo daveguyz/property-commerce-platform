@@ -4,46 +4,50 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.staysphere</groupId>
-    <artifactId>staysphere-aos</artifactId>
-    <version>1.0.0</version>
+    <groupId>com.propertycommerce</groupId>
+    <artifactId>property-commerce-platform</artifactId>
+    <version>2.0.0</version>
     <packaging>pom</packaging>
-    <name>StaySphere AOS - Accommodation Operating System</name>
+    <name>Property Commerce Platform</name>
+    <description>
+        Open, platform-agnostic property commerce engine — auction, booking,
+        listing and agreement infrastructure embeddable on any website.
+    </description>
 
     <modules>
-        <module>shared/common-dto</module>
-        <module>shared/common-events</module>
-        <module>shared/common-security</module>
-        <module>infrastructure/service-discovery</module>
-        <module>infrastructure/config-server</module>
-        <module>infrastructure/api-gateway</module>
-        <module>services/property-service</module>
-        <module>services/booking-engine</module>
-        <module>services/payment-service</module>
-        <module>services/ai-service</module>
-        <module>services/pricing-engine</module>
-        <module>services/trust-service</module>
-        <module>services/notification-service</module>
-        <module>services/search-service</module>
-        <module>services/auth-service</module>
-        <module>services/analytics-service</module>
-        <module>services/messaging-service</module>
-        <module>services/auction-service</module>
-        <module>shopify-integration</module>
+        <!-- Shared libraries (built first) -->
+        <module>platform/shared/common-dto</module>
+        <module>platform/shared/common-events</module>
+        <module>platform/shared/common-security</module>
+
+        <!-- Infrastructure -->
+        <module>platform/infrastructure/service-discovery</module>
+        <module>platform/infrastructure/config-server</module>
+        <module>platform/infrastructure/api-gateway</module>
+
+        <!-- Microservices -->
+        <module>platform/services/property-service</module>
+        <module>platform/services/booking-engine</module>
+        <module>platform/services/payment-service</module>
+        <module>platform/services/ai-service</module>
+        <module>platform/services/pricing-engine</module>
+        <module>platform/services/trust-service</module>
+        <module>platform/services/notification-service</module>
+        <module>platform/services/search-service</module>
+        <module>platform/services/auth-service</module>
+        <module>platform/services/analytics-service</module>
+        <module>platform/services/messaging-service</module>
+        <module>platform/services/auction-service</module>
+
+        <!-- Integrations (optional adapters) -->
+        <module>integrations/shopify</module>
     </modules>
 
     <properties>
         <java.version>21</java.version>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring-boot.version>3.3.0</spring-boot.version>
-        <spring-cloud.version>2023.0.1</spring-cloud.version>
-        <mapstruct.version>1.5.5.Final</mapstruct.version>
-        <lombok.version>1.18.32</lombok.version>
-        <testcontainers.version>1.19.8</testcontainers.version>
         <stripe.version>25.1.0</stripe.version>
-        <twilio.version>10.1.0</twilio.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencyManagement>
@@ -56,100 +60,45 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring-cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <!-- Shared modules -->
-            <dependency>
-                <groupId>com.staysphere</groupId>
-                <artifactId>common-dto</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.staysphere</groupId>
-                <artifactId>common-events</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.staysphere</groupId>
-                <artifactId>common-security</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <!-- Stripe -->
-            <dependency>
                 <groupId>com.stripe</groupId>
                 <artifactId>stripe-java</artifactId>
                 <version>${stripe.version}</version>
             </dependency>
-            <!-- Twilio -->
+            <!-- Internal shared modules -->
             <dependency>
-                <groupId>com.twilio.sdk</groupId>
-                <artifactId>twilio</artifactId>
-                <version>${twilio.version}</version>
+                <groupId>com.propertycommerce</groupId>
+                <artifactId>common-dto</artifactId>
+                <version>${project.version}</version>
             </dependency>
-            <!-- MapStruct -->
             <dependency>
-                <groupId>org.mapstruct</groupId>
-                <artifactId>mapstruct</artifactId>
-                <version>${mapstruct.version}</version>
+                <groupId>com.propertycommerce</groupId>
+                <artifactId>common-events</artifactId>
+                <version>${project.version}</version>
             </dependency>
-            <!-- Testcontainers BOM -->
             <dependency>
-                <groupId>org.testcontainers</groupId>
-                <artifactId>testcontainers-bom</artifactId>
-                <version>${testcontainers.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
+                <groupId>com.propertycommerce</groupId>
+                <artifactId>common-security</artifactId>
+                <version>${project.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
 
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-maven-plugin</artifactId>
-                    <version>${spring-boot.version}</version>
-                    <configuration>
-                        <excludes>
-                            <exclude>
-                                <groupId>org.projectlombok</groupId>
-                                <artifactId>lombok</artifactId>
-                            </exclude>
-                        </excludes>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.13.0</version>
-                    <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
-                        <annotationProcessorPaths>
-                            <path>
-                                <groupId>org.projectlombok</groupId>
-                                <artifactId>lombok</artifactId>
-                                <version>${lombok.version}</version>
-                            </path>
-                            <path>
-                                <groupId>org.mapstruct</groupId>
-                                <artifactId>mapstruct-processor</artifactId>
-                                <version>${mapstruct.version}</version>
-                            </path>
-                        </annotationProcessorPaths>
-                    </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.2.5</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>

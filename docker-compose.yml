@@ -1,7 +1,7 @@
 version: '3.9'
 
 # =====================================================
-# StaySphere AOS — Full Docker Compose Stack
+# Property Commerce Platform — Full Docker Compose Stack
 # =====================================================
 
 x-common-env: &common-env
@@ -11,8 +11,8 @@ x-common-env: &common-env
   KAFKA_SERVERS: kafka:9092
   REDIS_HOST: redis
   REDIS_PORT: 6379
-  DB_USER: staysphere
-  DB_PASS: staysphere_secret
+  DB_USER: pcp
+  DB_PASS: pcp_secret
   JWT_SECRET: ${JWT_SECRET:-bXlfc3VwZXJfc2VjcmV0X2tleV9mb3Jfc3RheXNwaGVyZV9wcm9kdWN0aW9uXzI1Ng==}
 
 services:
@@ -25,7 +25,7 @@ services:
       ZOOKEEPER_TICK_TIME: 2000
     ports: ["2181:2181"]
     volumes: [zookeeper-data:/var/lib/zookeeper/data]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
   kafka:
@@ -43,7 +43,7 @@ services:
       KAFKA_NUM_PARTITIONS: 3
       KAFKA_LOG_RETENTION_HOURS: 168
     volumes: [kafka-data:/var/lib/kafka/data]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
@@ -57,7 +57,7 @@ services:
     command: redis-server --requirepass ${REDIS_PASSWORD:-redis_secret} --maxmemory 512mb --maxmemory-policy allkeys-lru
     ports: ["6379:6379"]
     volumes: [redis-data:/data]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -74,7 +74,7 @@ services:
       xpack.security.enabled: "false"
     ports: ["9200:9200"]
     volumes: [es-data:/usr/share/elasticsearch/data]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\\|yellow\"'"]
@@ -87,15 +87,15 @@ services:
     image: postgres:16-alpine
     container_name: db-properties
     environment:
-      POSTGRES_DB: staysphere_properties
-      POSTGRES_USER: staysphere
-      POSTGRES_PASSWORD: staysphere_secret
+      POSTGRES_DB: pcp_properties
+      POSTGRES_USER: pcp
+      POSTGRES_PASSWORD: pcp_secret
     ports: ["5432:5432"]
     volumes: [db-properties-data:/var/lib/postgresql/data]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U staysphere -d staysphere_properties"]
+      test: ["CMD-SHELL", "pg_isready -U pcp -d pcp_properties"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -104,75 +104,75 @@ services:
     image: postgres:16-alpine
     container_name: db-bookings
     environment:
-      POSTGRES_DB: staysphere_bookings
-      POSTGRES_USER: staysphere
-      POSTGRES_PASSWORD: staysphere_secret
+      POSTGRES_DB: pcp_bookings
+      POSTGRES_USER: pcp
+      POSTGRES_PASSWORD: pcp_secret
     ports: ["5433:5432"]
     volumes: [db-bookings-data:/var/lib/postgresql/data]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U staysphere -d staysphere_bookings"]
+      test: ["CMD-SHELL", "pg_isready -U pcp -d pcp_bookings"]
       interval: 10s
 
   db-payments:
     image: postgres:16-alpine
     container_name: db-payments
     environment:
-      POSTGRES_DB: staysphere_payments
-      POSTGRES_USER: staysphere
-      POSTGRES_PASSWORD: staysphere_secret
+      POSTGRES_DB: pcp_payments
+      POSTGRES_USER: pcp
+      POSTGRES_PASSWORD: pcp_secret
     ports: ["5434:5432"]
     volumes: [db-payments-data:/var/lib/postgresql/data]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
   db-ai:
     image: postgres:16-alpine
     container_name: db-ai
     environment:
-      POSTGRES_DB: staysphere_ai
-      POSTGRES_USER: staysphere
-      POSTGRES_PASSWORD: staysphere_secret
+      POSTGRES_DB: pcp_ai
+      POSTGRES_USER: pcp
+      POSTGRES_PASSWORD: pcp_secret
     ports: ["5435:5432"]
     volumes: [db-ai-data:/var/lib/postgresql/data]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
   db-pricing:
     image: postgres:16-alpine
     container_name: db-pricing
     environment:
-      POSTGRES_DB: staysphere_pricing
-      POSTGRES_USER: staysphere
-      POSTGRES_PASSWORD: staysphere_secret
+      POSTGRES_DB: pcp_pricing
+      POSTGRES_USER: pcp
+      POSTGRES_PASSWORD: pcp_secret
     ports: ["5436:5432"]
     volumes: [db-pricing-data:/var/lib/postgresql/data]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
   db-trust:
     image: postgres:16-alpine
     container_name: db-trust
     environment:
-      POSTGRES_DB: staysphere_trust
-      POSTGRES_USER: staysphere
-      POSTGRES_PASSWORD: staysphere_secret
+      POSTGRES_DB: pcp_trust
+      POSTGRES_USER: pcp
+      POSTGRES_PASSWORD: pcp_secret
     ports: ["5437:5432"]
     volumes: [db-trust-data:/var/lib/postgresql/data]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
   db-notifications:
     image: postgres:16-alpine
     container_name: db-notifications
     environment:
-      POSTGRES_DB: staysphere_notifications
-      POSTGRES_USER: staysphere
-      POSTGRES_PASSWORD: staysphere_secret
+      POSTGRES_DB: pcp_notifications
+      POSTGRES_USER: pcp
+      POSTGRES_PASSWORD: pcp_secret
     ports: ["5438:5432"]
     volumes: [db-notifications-data:/var/lib/postgresql/data]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
 
@@ -180,45 +180,45 @@ services:
     image: postgres:16-alpine
     container_name: db-auth
     environment:
-      POSTGRES_DB: staysphere_auth
-      POSTGRES_USER: staysphere
-      POSTGRES_PASSWORD: staysphere_secret
+      POSTGRES_DB: pcp_auth
+      POSTGRES_USER: pcp
+      POSTGRES_PASSWORD: pcp_secret
     ports: ["5439:5432"]
     volumes: [db-auth-data:/var/lib/postgresql/data]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U staysphere -d staysphere_auth"]
+      test: ["CMD-SHELL", "pg_isready -U pcp -d pcp_auth"]
       interval: 10s
 
   db-analytics:
     image: postgres:16-alpine
     container_name: db-analytics
     environment:
-      POSTGRES_DB: staysphere_analytics
-      POSTGRES_USER: staysphere
-      POSTGRES_PASSWORD: staysphere_secret
+      POSTGRES_DB: pcp_analytics
+      POSTGRES_USER: pcp
+      POSTGRES_PASSWORD: pcp_secret
     ports: ["5440:5432"]
     volumes: [db-analytics-data:/var/lib/postgresql/data]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U staysphere -d staysphere_analytics"]
+      test: ["CMD-SHELL", "pg_isready -U pcp -d pcp_analytics"]
       interval: 10s
 
   db-messaging:
     image: postgres:16-alpine
     container_name: db-messaging
     environment:
-      POSTGRES_DB: staysphere_messaging
-      POSTGRES_USER: staysphere
-      POSTGRES_PASSWORD: staysphere_secret
+      POSTGRES_DB: pcp_messaging
+      POSTGRES_USER: pcp
+      POSTGRES_PASSWORD: pcp_secret
     ports: ["5441:5432"]
     volumes: [db-messaging-data:/var/lib/postgresql/data]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U staysphere -d staysphere_messaging"]
+      test: ["CMD-SHELL", "pg_isready -U pcp -d pcp_messaging"]
       interval: 10s
 
 
@@ -226,15 +226,15 @@ services:
     image: postgres:16-alpine
     container_name: db-auction
     environment:
-      POSTGRES_DB: staysphere_auction
-      POSTGRES_USER: staysphere
-      POSTGRES_PASSWORD: staysphere_secret
+      POSTGRES_DB: pcp_auction
+      POSTGRES_USER: pcp
+      POSTGRES_PASSWORD: pcp_secret
     ports: ["5442:5432"]
     volumes: [db-auction-data:/var/lib/postgresql/data]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U staysphere -d staysphere_auction"]
+      test: ["CMD-SHELL", "pg_isready -U pcp -d pcp_auction"]
       interval: 10s
 
   # ─── SPRING CLOUD INFRASTRUCTURE ──────────────
@@ -248,7 +248,7 @@ services:
       EUREKA_USER: ${EUREKA_USER:-eureka}
       EUREKA_PASSWORD: ${EUREKA_PASSWORD:-eureka_secret}
     ports: ["8761:8761"]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://eureka:eureka_secret@localhost:8761/actuator/health"]
@@ -268,7 +268,7 @@ services:
       <<: *common-env
       EUREKA_URL: http://service-discovery:8761/eureka/
     ports: ["8888:8888"]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
   api-gateway:
@@ -285,7 +285,7 @@ services:
       <<: *common-env
       PORT: 8080
     ports: ["8080:8080"]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
   # ─── MICROSERVICES ─────────────────────────────
@@ -306,11 +306,11 @@ services:
     environment:
       <<: *common-env
       PORT: 8081
-      DB_URL: jdbc:postgresql://db-properties:5432/staysphere_properties
+      DB_URL: jdbc:postgresql://db-properties:5432/pcp_properties
       SHOPIFY_STORE_URL: ${SHOPIFY_STORE_URL}
       SHOPIFY_ACCESS_TOKEN: ${SHOPIFY_ACCESS_TOKEN}
     ports: ["8081:8081"]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
@@ -335,10 +335,10 @@ services:
     environment:
       <<: *common-env
       PORT: 8082
-      DB_URL: jdbc:postgresql://db-bookings:5432/staysphere_bookings
+      DB_URL: jdbc:postgresql://db-bookings:5432/pcp_bookings
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
     ports: ["8082:8082"]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
   payment-service:
@@ -356,11 +356,11 @@ services:
     environment:
       <<: *common-env
       PORT: 8083
-      DB_URL: jdbc:postgresql://db-payments:5432/staysphere_payments
+      DB_URL: jdbc:postgresql://db-payments:5432/pcp_payments
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
     ports: ["8083:8083"]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
   ai-service:
@@ -376,10 +376,10 @@ services:
     environment:
       <<: *common-env
       PORT: 8084
-      DB_URL: jdbc:postgresql://db-ai:5432/staysphere_ai
+      DB_URL: jdbc:postgresql://db-ai:5432/pcp_ai
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
     ports: ["8084:8084"]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
   pricing-engine:
@@ -395,9 +395,9 @@ services:
     environment:
       <<: *common-env
       PORT: 8085
-      DB_URL: jdbc:postgresql://db-pricing:5432/staysphere_pricing
+      DB_URL: jdbc:postgresql://db-pricing:5432/pcp_pricing
     ports: ["8085:8085"]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
   trust-service:
@@ -415,9 +415,9 @@ services:
     environment:
       <<: *common-env
       PORT: 8086
-      DB_URL: jdbc:postgresql://db-trust:5432/staysphere_trust
+      DB_URL: jdbc:postgresql://db-trust:5432/pcp_trust
     ports: ["8086:8086"]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
   notification-service:
@@ -435,7 +435,7 @@ services:
     environment:
       <<: *common-env
       PORT: 8087
-      DB_URL: jdbc:postgresql://db-notifications:5432/staysphere_notifications
+      DB_URL: jdbc:postgresql://db-notifications:5432/pcp_notifications
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}
       SMTP_USER: ${SMTP_USER}
@@ -445,7 +445,7 @@ services:
       TWILIO_FROM_NUMBER: ${TWILIO_FROM_NUMBER}
       TWILIO_WHATSAPP_NUMBER: ${TWILIO_WHATSAPP_NUMBER}
     ports: ["8087:8087"]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
   search-service:
@@ -465,21 +465,21 @@ services:
       PORT: 8088
       ELASTICSEARCH_URL: http://elasticsearch:9200
     ports: ["8088:8088"]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
   db-shopify:
     image: postgres:16-alpine
     container_name: db-shopify
     environment:
-      POSTGRES_DB: staysphere_shopify
-      POSTGRES_USER: staysphere
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-staysphere_secret}
+      POSTGRES_DB: pcp_shopify
+      POSTGRES_USER: pcp
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-pcp_secret}
     volumes: [db-shopify-data:/var/lib/postgresql/data]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U staysphere"]
+      test: ["CMD-SHELL", "pg_isready -U pcp"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -499,9 +499,9 @@ services:
     environment:
       <<: *common-env
       PORT: 8090
-      DB_URL: jdbc:postgresql://db-shopify:5432/staysphere_shopify
-      DB_USERNAME: staysphere
-      DB_PASSWORD: ${DB_PASSWORD:-staysphere_secret}
+      DB_URL: jdbc:postgresql://db-shopify:5432/pcp_shopify
+      DB_USERNAME: pcp
+      DB_PASSWORD: ${DB_PASSWORD:-pcp_secret}
       SHOPIFY_STORE_URL: ${SHOPIFY_STORE_URL}
       SHOPIFY_ACCESS_TOKEN: ${SHOPIFY_ACCESS_TOKEN}
       SHOPIFY_STOREFRONT_TOKEN: ${SHOPIFY_STOREFRONT_TOKEN}
@@ -513,7 +513,7 @@ services:
       API_GATEWAY_URL: ${API_GATEWAY_URL:-}
       FRONTEND_URL: ${FRONTEND_URL:-}
     ports: ["8090:8090"]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
 
@@ -534,9 +534,9 @@ services:
     environment:
       <<: *common-env
       PORT: 8091
-      DB_URL: jdbc:postgresql://db-auth:5432/staysphere_auth
+      DB_URL: jdbc:postgresql://db-auth:5432/pcp_auth
     ports: ["8091:8091"]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8091/actuator/health"]
@@ -561,9 +561,9 @@ services:
     environment:
       <<: *common-env
       PORT: 8092
-      DB_URL: jdbc:postgresql://db-analytics:5432/staysphere_analytics
+      DB_URL: jdbc:postgresql://db-analytics:5432/pcp_analytics
     ports: ["8092:8092"]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
   messaging-service:
@@ -583,9 +583,9 @@ services:
     environment:
       <<: *common-env
       PORT: 8093
-      DB_URL: jdbc:postgresql://db-messaging:5432/staysphere_messaging
+      DB_URL: jdbc:postgresql://db-messaging:5432/pcp_messaging
     ports: ["8093:8093"]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
 
@@ -606,9 +606,9 @@ services:
     environment:
       <<: *common-env
       PORT: 8094
-      DB_URL: jdbc:postgresql://db-auction:5432/staysphere_auction
+      DB_URL: jdbc:postgresql://db-auction:5432/pcp_auction
     ports: ["8094:8094"]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8094/actuator/health"]
@@ -629,7 +629,7 @@ services:
       - '--storage.tsdb.retention.time=30d'
       - '--web.enable-lifecycle'
     ports: ["9090:9090"]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
   grafana:
@@ -639,12 +639,12 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-grafana_secret}
-      GF_SERVER_ROOT_URL: https://monitoring.staysphere.com
+      GF_SERVER_ROOT_URL: https://monitoring.propertycommerce.io
     ports: ["3000:3000"]
     volumes:
       - grafana-data:/var/lib/grafana
       - ./k8s/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
   kafka-ui:
@@ -652,14 +652,14 @@ services:
     container_name: kafka-ui
     depends_on: [kafka]
     environment:
-      KAFKA_CLUSTERS_0_NAME: staysphere-cluster
+      KAFKA_CLUSTERS_0_NAME: pcp-cluster
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
     ports: ["8989:8080"]
-    networks: [staysphere-net]
+    networks: [pcp-network]
     restart: unless-stopped
 
 networks:
-  staysphere-net:
+  pcp-network:
     driver: bridge
     ipam:
       config:

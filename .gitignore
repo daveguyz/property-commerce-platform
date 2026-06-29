@@ -1,48 +1,40 @@
 # Maven
 target/
-*.class
 *.jar
 *.war
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-# IntelliJ IDEA
+# IntelliJ
 .idea/
-*.iws
 *.iml
+*.iws
 *.ipr
-out/
-
-# Eclipse
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-# NetBeans
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
 
 # VS Code
 .vscode/
+!.vscode/extensions.json
+
+# Node / SDK
+node_modules/
+sdk/packages/*/dist/
+sdk/demo/dist/
+vscode-extension/out/
+vscode-extension/*.vsix
+*.vsix
 
 # Environment
 .env
-.env.*
-!.env.example
-
-# OS
-.DS_Store
-Thumbs.db
+.env.local
+.env.*.local
 
 # Logs
 *.log
 logs/
 
-# Docker
-docker-compose.override.yml
+# OS
+.DS_Store
+Thumbs.db
+
+# Spring Boot dev tools
+spring-shell.log
