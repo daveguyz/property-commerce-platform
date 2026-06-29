@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -147,4 +148,14 @@ public class DepositService {
         return depositRepository.existsByAuctionLotIdAndBidderIdAndStatus(
                 lotId, bidderId, DepositStatus.HELD);
     }
+    /**
+     * Returns the captured deposit amount for the winning bidder on a lot.
+     * Used by AuctionSettlementService when firing PurchaseAgreementRequiredEvent.
+     */
+    public Optional<java.math.BigDecimal> getWinnerDepositAmount(String lotId, String bidderId) {
+        return depositRepository.findByAuctionLotIdAndBidderIdAndStatus(
+                        lotId, bidderId, DepositStatus.CAPTURED)
+                .map(BidderDeposit::getDepositAmount);
+    }
+
 }

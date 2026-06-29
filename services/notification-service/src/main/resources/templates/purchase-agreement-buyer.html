@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><title>Sign your purchase agreement</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f9fafb;margin:0;padding:0}
+  .c{max-width:580px;margin:0 auto;padding:32px 16px}
+  .card{background:#fff;border-radius:12px;padding:32px;border:1px solid #e5e7eb}
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}
+  .ic{background:#f3f4f6;border-radius:8px;padding:14px 16px}
+  .ic-l{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin:0 0 4px}
+  .ic-v{font-size:15px;font-weight:700;color:#111827;margin:0}
+  .alert{background:#fffbeb;border:1.5px solid #fde68a;border-radius:8px;padding:12px 16px;margin:16px 0;font-size:14px;color:#92400e}
+  .btn{display:inline-block;padding:14px 28px;background:#6366f1;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;margin-top:20px}
+  h2{margin:0 0 6px;font-size:22px} p{color:#374151;line-height:1.6}
+  .foot{font-size:12px;color:#9ca3af;text-align:center;margin-top:24px}
+</style></head>
+<body><div class="c"><div class="card">
+  <h2>Sign your purchase agreement</h2>
+  <p>Congratulations on winning <strong th:text="${lotTitle}">Lot</strong>. Your purchase agreement is ready for signature.</p>
+  <div class="info-grid">
+    <div class="ic"><p class="ic-l">Winning bid</p><p class="ic-v" th:text="${currency + ' ' + winningAmount}">–</p></div>
+    <div class="ic"><p class="ic-l">Deposit paid</p><p class="ic-v" th:text="${currency + ' ' + depositAmount}">–</p></div>
+    <div class="ic"><p class="ic-l">Balance due</p><p class="ic-v" th:text="${currency + ' ' + balanceDue}">–</p></div>
+    <div class="ic"><p class="ic-l">Payment deadline</p><p class="ic-v" th:text="${paymentDeadline}">–</p></div>
+  </div>
+  <div class="alert">⏱ Your signing link expires in <strong>72 hours</strong>. Please sign promptly.</div>
+  <a th:href="${buyerSignUrl}" class="btn">Sign the agreement →</a>
+</div><div class="foot"><p>StaySphere AOS · This agreement is legally binding once both parties sign.</p></div></div></body></html>

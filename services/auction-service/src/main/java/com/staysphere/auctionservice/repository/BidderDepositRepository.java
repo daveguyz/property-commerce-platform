@@ -17,5 +17,8 @@ public interface BidderDepositRepository extends JpaRepository<BidderDeposit, St
 
     List<BidderDeposit> findByBidderIdOrderByCreatedAtDesc(String bidderId);
 
+    java.util.Optional<BidderDeposit> findByAuctionLotIdAndBidderIdAndStatus(
+        String auctionLotId, String bidderId, DepositStatus status);
+
     boolean existsByAuctionLotIdAndBidderIdAndStatus(String lotId, String bidderId, DepositStatus status);
 }

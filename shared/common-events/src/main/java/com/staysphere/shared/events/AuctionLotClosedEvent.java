@@ -12,6 +12,8 @@ public class AuctionLotClosedEvent {
     private String propertyId;
     private String sellerId;
     private String winnerId;       // null if no bids
+    private String winnerEmail;    // for PurchaseAgreementRequiredEvent
+    private String sellerEmail;    // for PurchaseAgreementRequiredEvent
     private BigDecimal winningAmount;
     private String currency;
     private Boolean hadWinner;

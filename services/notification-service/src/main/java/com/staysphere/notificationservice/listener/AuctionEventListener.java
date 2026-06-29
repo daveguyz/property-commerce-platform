@@ -267,6 +267,97 @@ public class AuctionEventListener {
      * Resolve a user's email from their user ID.
      * Placeholder — replace with Feign call to auth-service in production.
      */
+    // ─── Phase 7: Purchase agreement events ─────────────────────────────
+
+    @KafkaListener(topics = "auction.agreement-signing-required",
+                   groupId = "notification-service-group")
+    public void onAgreementSigningRequired(java.util.Map<String, Object> event) {
+        try {
+            String winnerEmail = (String) event.get("winnerEmail");
+            String sellerEmail = (String) event.get("sellerEmail");
+            String lotTitle    = (String) event.getOrDefault("lotTitle", "");
+            String accountUrl  = baseUrl + "/account";
+
+            java.util.Map<String, Object> buyerVars = java.util.Map.of(
+                "lotTitle",      lotTitle,
+                "winningAmount", event.getOrDefault("winningAmount", "0"),
+                "depositAmount", event.getOrDefault("depositAmount", "0"),
+                "balanceDue",    event.getOrDefault("balanceDue",    "0"),
+                "currency",      event.getOrDefault("currency",      "USD"),
+                "paymentDeadline", event.getOrDefault("paymentDeadline", ""),
+                "buyerSignUrl",  event.getOrDefault("buyerSignUrl",  "")
+            );
+
+            java.util.Map<String, Object> sellerVars = java.util.Map.of(
+                "lotTitle",      lotTitle,
+                "winningAmount", event.getOrDefault("winningAmount", "0"),
+                "balanceDue",    event.getOrDefault("balanceDue",    "0"),
+                "currency",      event.getOrDefault("currency",      "USD"),
+                "sellerSignUrl", event.getOrDefault("sellerSignUrl", "")
+            );
+
+            if (winnerEmail != null && !winnerEmail.isBlank()) {
+                emailService.sendTemplatedEmail(winnerEmail,
+                    "Action required: Sign your purchase agreement for " + lotTitle,
+                    "purchase-agreement-buyer", buyerVars);
+                log.info("[Notification] purchase-agreement-buyer sent to {}", winnerEmail);
+            }
+            if (sellerEmail != null && !sellerEmail.isBlank()) {
+                emailService.sendTemplatedEmail(sellerEmail,
+                    "Your property has sold — please sign the agreement",
+                    "purchase-agreement-seller", sellerVars);
+                log.info("[Notification] purchase-agreement-seller sent to {}", sellerEmail);
+            }
+        } catch (Exception e) {
+            log.error("[Notification] Failed to send signing emails: {}", e.getMessage());
+        }
+    }
+
+    @KafkaListener(topics = AgreementFullyExecutedEvent.TOPIC,
+                   groupId = "notification-service-group")
+    public void onAgreementExecuted(AgreementFullyExecutedEvent event) {
+        try {
+            String accountUrl = baseUrl + "/account";
+            java.util.Map<String, Object> vars = java.util.Map.of(
+                "lotTitle",       "Lot " + event.getLotId(),
+                "conveyancerRef", "CONV-" + event.getAgreementId().substring(0, 8).toUpperCase(),
+                "accountUrl",     accountUrl
+            );
+            for (String email : new String[]{event.getWinnerEmail(), event.getSellerEmail()}) {
+                if (email != null && !email.isBlank()) {
+                    emailService.sendTemplatedEmail(email,
+                        "Agreement fully executed — conveyancing initiated",
+                        "purchase-agreement-executed", vars);
+                }
+            }
+            log.info("[Notification] purchase-agreement-executed sent for lot {}", event.getLotId());
+        } catch (Exception e) {
+            log.error("[Notification] Failed to send executed email: {}", e.getMessage());
+        }
+    }
+
+    @KafkaListener(topics = PaymentDefaultedEvent.TOPIC,
+                   groupId = "notification-service-group")
+    public void onPaymentDefaulted(PaymentDefaultedEvent event) {
+        try {
+            String messagesUrl = baseUrl + "/pages/messages";
+            java.util.Map<String, Object> vars = java.util.Map.of(
+                "lotTitle",         "Lot " + event.getLotId(),
+                "currency",         event.getCurrency() != null ? event.getCurrency() : "USD",
+                "forfeitedDeposit", event.getForfeitedDeposit() != null ? event.getForfeitedDeposit().toPlainString() : "0",
+                "messagesUrl",      messagesUrl
+            );
+            if (event.getDefaultingBidderEmail() != null && !event.getDefaultingBidderEmail().isBlank()) {
+                emailService.sendTemplatedEmail(event.getDefaultingBidderEmail(),
+                    "Payment default notice — Lot " + event.getLotId(),
+                    "payment-defaulted", vars);
+                log.info("[Notification] payment-defaulted sent to {}", event.getDefaultingBidderEmail());
+            }
+        } catch (Exception e) {
+            log.error("[Notification] Failed to send defaulted email: {}", e.getMessage());
+        }
+    }
+
     private String resolveEmail(String userId) {
         // TODO: Feign client to auth-service GET /api/v1/auth/users/{userId}/email
         return null;

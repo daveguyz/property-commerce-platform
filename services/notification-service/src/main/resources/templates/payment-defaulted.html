@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><title>Payment default notice</title>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f9fafb;margin:0;padding:0}
+  .c{max-width:580px;margin:0 auto;padding:32px 16px}
+  .card{background:#fff;border-radius:12px;padding:32px;border:1px solid #e5e7eb}
+  .badge{display:inline-block;padding:6px 16px;background:#fee2e2;color:#b91c1c;border-radius:20px;font-weight:800;font-size:14px;margin-bottom:16px}
+  .box{background:#fef2f2;border:1.5px solid #fecaca;border-radius:8px;padding:14px 16px;margin:16px 0;font-size:14px;color:#7f1d1d}
+  .btn{display:inline-block;padding:12px 24px;background:#6366f1;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;margin-top:16px}
+  h2{margin:0 0 6px;font-size:22px} p{color:#374151;line-height:1.6}
+  .foot{font-size:12px;color:#9ca3af;text-align:center;margin-top:24px}
+</style></head>
+<body><div class="c"><div class="card">
+  <span class="badge">Payment Defaulted</span>
+  <h2>Your purchase has been cancelled</h2>
+  <p>The payment deadline for <strong th:text="${lotTitle}">Lot</strong> has passed without confirmation of full payment.</p>
+  <div class="box">
+    Your deposit of <strong th:text="${currency + ' ' + forfeitedDeposit}">–</strong> has been forfeited in accordance with Auction Rule 9.2.
+    The lot may be offered to the next highest bidder.
+  </div>
+  <p>If you believe this is an error, please contact support immediately.</p>
+  <a th:href="${messagesUrl}" class="btn">Contact support →</a>
+</div><div class="foot"><p>StaySphere AOS · Auction Rule 9.2</p></div></div></body></html>

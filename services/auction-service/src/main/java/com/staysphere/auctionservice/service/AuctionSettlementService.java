@@ -5,6 +5,7 @@ import com.staysphere.auctionservice.repository.*;
 import com.staysphere.auctionservice.websocket.AuctionBroadcastService;
 import com.staysphere.auctionservice.service.LivestreamService;
 import com.staysphere.shared.events.AuctionLotClosedEvent;
+import com.staysphere.shared.events.PurchaseAgreementRequiredEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -27,6 +28,10 @@ import java.util.UUID;
  */
 @Service @Slf4j @RequiredArgsConstructor
 public class AuctionSettlementService {
+
+    @org.springframework.beans.factory.annotation.Value(
+            "${staysphere.agreement.payment-deadline-days:10}")
+    private int paymentDeadlineDays;
 
     private final AuctionLotRepository lotRepository;
     private final BidRepository bidRepository;
@@ -119,6 +124,30 @@ public class AuctionSettlementService {
                 .reserveMet(true)
                 .occurredAt(LocalDateTime.now())
                 .build());
+
+        // Fire purchase agreement creation — booking-engine picks this up
+        // Deposit amount = what was captured from the winner
+        java.math.BigDecimal depositAmt = depositService
+                .getWinnerDepositAmount(lotId, winnerId)
+                .orElse(java.math.BigDecimal.ZERO);
+
+        kafkaTemplate.send(PurchaseAgreementRequiredEvent.TOPIC,
+                PurchaseAgreementRequiredEvent.builder()
+                        .eventId(UUID.randomUUID().toString())
+                        .lotId(lotId)
+                        .propertyId(lot.getPropertyId())
+                        .lotTitle(lot.getTitle())
+                        .winnerId(winnerId)
+                        .winnerEmail("")  // TODO: resolve via auth-service Feign call
+                        .sellerId(lot.getSellerId())
+                        .sellerEmail("")  // TODO: resolve via auth-service Feign call
+                        .auctioneerId(lot.getAuctioneerId())
+                        .winningAmount(lot.getWinningAmount())
+                        .depositAmount(depositAmt)
+                        .currency(lot.getCurrency())
+                        .auctionClosedAt(LocalDateTime.now())
+                        .paymentDeadlineDays(paymentDeadlineDays)
+                        .build());
 
         // ── Step 6: Final WebSocket broadcast ────────────────────────────
         broadcastService.broadcastLotClosed(lot);
