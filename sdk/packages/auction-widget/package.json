@@ -1,0 +1,12 @@
+{
+  "name": "@property-commerce/auction-widget",
+  "version": "2.0.0",
+  "description": "Auction listing and live bidding room widgets for the Property Commerce Platform SDK",
+  "type": "module",
+  "main": "./src/index.js",
+  "module": "./src/index.js",
+  "dependencies": {
+    "@property-commerce/core": "2.0.0"
+  },
+  "license": "Apache-2.0"
+}

@@ -22,6 +22,9 @@ public class JwtAuthGatewayFilter extends AbstractGatewayFilterFactory<JwtAuthGa
     private static final List<String> PUBLIC_PATHS = List.of(
         "/api/v1/auth/", "/api/v1/properties/search", "/api/v1/ai/concierge/public",
         "/api/v1/ai/area-intelligence", "/api/v1/ai/calendar-insights",
+        "/api/v1/auth/api-keys/validate",  // internal — ApiKeyGatewayFilter calls this
+        "/api/v1/auctions",                 // public lot listing
+        "/api/v1/auctions/live",             // public live lots
         "/actuator/", "/webhook/", "/v3/api-docs", "/swagger-ui");
 
     public JwtAuthGatewayFilter() { super(Config.class); }

@@ -70,6 +70,7 @@ jobs:
           - platform/services/ai-service
           - platform/services/pricing-engine
           - platform/infrastructure/api-gateway
+          - integrations/webhook-router
 
     services:
       postgres:

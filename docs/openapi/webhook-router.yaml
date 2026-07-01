@@ -1,0 +1,182 @@
+openapi: 3.1.0
+info:
+  title: Property Commerce Platform — Webhook Router
+  version: 2.0.0
+  description: |
+    Register HTTP endpoints to receive real-time events from the platform.
+    All deliveries are signed with HMAC-SHA256 so you can verify authenticity.
+
+    **Verifying delivery signatures:**
+    ```js
+    const crypto = require('crypto');
+    const sig = req.headers['x-pcp-signature']; // "sha256=abc123..."
+    const ts  = req.headers['x-pcp-timestamp']; // Unix seconds
+    const expected = 'sha256=' + crypto
+      .createHmac('sha256', YOUR_SIGNING_SECRET)
+      .update(ts + '.' + req.body)
+      .digest('hex');
+    const valid = crypto.timingSafeEqual(
+      Buffer.from(sig), Buffer.from(expected));
+    ```
+
+    **Event types:**
+    | Event | Description |
+    |---|---|
+    | `auction.lot.opened` | Lot transitions to OPEN status |
+    | `auction.lot.closed` | Lot closes (with or without bids) |
+    | `bid.placed` | A bid is placed on a lot |
+    | `bid.credential-issued` | A bidding credential is issued to a bidder |
+    | `bid.credential-revoked` | A credential is revoked by the auctioneer |
+    | `auction.question-submitted` | A bidder submits a question |
+    | `auction.question-answered` | A question is answered |
+    | `agreement.executed` | Purchase agreement signed by both parties |
+    | `payment.defaulted` | Buyer failed to pay by the deadline |
+    | `booking.confirmed` | Booking confirmed |
+    | `booking.cancelled` | Booking cancelled |
+
+    **Filtering:** Pass `eventFilter` as a comma-separated list of event types.
+    Wildcards are supported: `"auction.*"` matches all auction events.
+    An empty filter means receive all events.
+
+servers:
+  - url: https://api.propertycommerce.io
+    description: Production (via API gateway)
+  - url: http://localhost:8080
+    description: Local development
+
+security:
+  - apiKeyAuth: []
+
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+
+  schemas:
+    WebhookEndpoint:
+      type: object
+      properties:
+        id:            { type: string, format: uuid }
+        tenantId:      { type: string }
+        url:           { type: string, format: uri }
+        signingSecret: { type: string, description: "Returned once at creation only" }
+        eventFilter:   { type: string, example: "auction.*,bid.placed" }
+        active:        { type: boolean }
+        failureCount:  { type: integer }
+        lastDeliveryAt: { type: string, format: date-time, nullable: true }
+        createdAt:     { type: string, format: date-time }
+
+    WebhookDelivery:
+      type: object
+      properties:
+        id:           { type: string }
+        endpointId:   { type: string }
+        eventType:    { type: string }
+        eventId:      { type: string }
+        status:       { type: string, enum: [PENDING, DELIVERED, FAILED, ABANDONED] }
+        httpStatus:   { type: integer, nullable: true }
+        attemptCount: { type: integer }
+        nextRetryAt:  { type: string, format: date-time, nullable: true }
+        deliveredAt:  { type: string, format: date-time, nullable: true }
+        createdAt:    { type: string, format: date-time }
+
+paths:
+
+  /api/v1/webhooks:
+    post:
+      summary: Register a webhook endpoint
+      operationId: registerWebhook
+      tags: [Webhook Endpoints]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [url]
+              properties:
+                url:
+                  type: string
+                  format: uri
+                  example: "https://yoursite.com/pcp-webhook"
+                eventFilter:
+                  type: string
+                  example: "auction.*,agreement.executed"
+                  description: "Comma-separated. Empty = receive all events."
+      responses:
+        '200':
+          description: Endpoint registered. The signingSecret in the response is shown once only.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data: { $ref: '#/components/schemas/WebhookEndpoint' }
+        '400':
+          description: Missing required URL
+
+    get:
+      summary: List active endpoints for the tenant
+      operationId: listWebhooks
+      tags: [Webhook Endpoints]
+      responses:
+        '200':
+          description: List of active endpoints (signingSecret is not returned)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/WebhookEndpoint' }
+
+  /api/v1/webhooks/{id}:
+    delete:
+      summary: Disable a webhook endpoint
+      operationId: deleteWebhook
+      tags: [Webhook Endpoints]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Endpoint disabled
+
+  /api/v1/webhooks/{id}/deliveries:
+    get:
+      summary: Delivery log for an endpoint
+      operationId: listDeliveries
+      tags: [Delivery Logs]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 0 }
+        - name: size
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Paginated delivery history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      content:
+                        type: array
+                        items: { $ref: '#/components/schemas/WebhookDelivery' }

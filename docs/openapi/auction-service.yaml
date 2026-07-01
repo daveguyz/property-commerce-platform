@@ -1,0 +1,370 @@
+openapi: 3.1.0
+info:
+  title: Property Commerce Platform — Auction Service
+  version: 2.0.0
+  description: |
+    Live bidding engine, proxy/anti-snipe logic, bidding credentials,
+    bidder Q&A, KYC, and AI fraud assessment.
+
+    **Authentication:** Include either:
+    - `Authorization: Bearer <jwt>` — end-user session token
+    - `X-Api-Key: pcp_live_xxx` — tenant API key (server-to-server)
+
+    All requests must also include `X-Tenant-Id: <uuid>` unless using a JWT
+    that already carries the tenant claim.
+
+servers:
+  - url: https://api.propertycommerce.io
+    description: Production (via API gateway)
+  - url: http://localhost:8080
+    description: Local development (via API gateway)
+
+security:
+  - bearerAuth: []
+  - apiKeyAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Api-Key
+
+  schemas:
+    AuctionLot:
+      type: object
+      properties:
+        id:          { type: string, format: uuid }
+        propertyId:  { type: string }
+        title:       { type: string }
+        auctionType: { type: string, enum: [ENGLISH, DUTCH, REVERSE, SEALED_BID] }
+        status:      { type: string, enum: [DRAFT, SCHEDULED, OPEN, EXTENDED, CLOSED, SETTLED, NO_RESERVE, CANCELLED] }
+        startingPrice:     { type: number }
+        reservePrice:      { type: number, nullable: true }
+        currentBidAmount:  { type: number, nullable: true }
+        winningAmount:     { type: number, nullable: true }
+        currency:    { type: string, example: USD }
+        totalBids:   { type: integer }
+        uniqueBidders: { type: integer }
+        startsAt:    { type: string, format: date-time }
+        scheduledEndsAt: { type: string, format: date-time }
+
+    Bid:
+      type: object
+      properties:
+        id:        { type: string, format: uuid }
+        lotId:     { type: string }
+        bidderId:  { type: string }
+        amount:    { type: number }
+        currency:  { type: string }
+        status:    { type: string, enum: [WINNING, OUTBID, CANCELLED] }
+        placedAt:  { type: string, format: date-time }
+        credentialId: { type: string, nullable: true }
+
+    LotQuestion:
+      type: object
+      properties:
+        id:                 { type: string }
+        lotId:              { type: string }
+        bidderDisplayName:  { type: string, example: "Bidder #4" }
+        content:            { type: string, maxLength: 500 }
+        category:           { type: string, enum: [GENERAL, PROPERTY_INFO, BIDDING_RULES, TECHNICAL, COMPLAINT] }
+        status:             { type: string, enum: [PENDING, ANSWERED, DISMISSED, ESCALATED] }
+        response:           { type: string, nullable: true }
+        answeredPublicly:   { type: boolean }
+        submittedAt:        { type: string, format: date-time }
+
+    BiddingCredential:
+      type: object
+      properties:
+        id:           { type: string }
+        lotId:        { type: string }
+        bidderId:     { type: string }
+        status:       { type: string, enum: [ACTIVE, REVOKED, EXPIRED] }
+        bidCountUsed: { type: integer }
+        issuedAt:     { type: string, format: date-time }
+        expiresAt:    { type: string, format: date-time }
+
+    ApiResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string }
+        data:    {}
+
+paths:
+
+  /api/v1/auctions:
+    get:
+      summary: List auction lots
+      operationId: listLots
+      tags: [Auction Lots]
+      security: []
+      parameters:
+        - name: status
+          in: query
+          description: Comma-separated status filter, e.g. "OPEN,EXTENDED"
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 0 }
+        - name: size
+          in: query
+          schema: { type: integer, default: 12, maximum: 50 }
+      responses:
+        '200':
+          description: Paginated list of lots
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          content:
+                            type: array
+                            items: { $ref: '#/components/schemas/AuctionLot' }
+
+    post:
+      summary: Create a new auction lot
+      operationId: createLot
+      tags: [Auction Lots]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [propertyId, auctionType, startingPrice, currency]
+              properties:
+                propertyId:    { type: string }
+                auctionType:   { type: string, enum: [ENGLISH, DUTCH, REVERSE, SEALED_BID] }
+                startingPrice: { type: number, minimum: 0 }
+                reservePrice:  { type: number }
+                currency:      { type: string, example: USD }
+                startsAt:      { type: string, format: date-time }
+                scheduledEndsAt: { type: string, format: date-time }
+      responses:
+        '200':
+          description: Lot created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/AuctionLot' }
+
+  /api/v1/auctions/{lotId}:
+    get:
+      summary: Get a specific auction lot
+      operationId: getLot
+      tags: [Auction Lots]
+      parameters:
+        - name: lotId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Lot details
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/AuctionLot' }
+
+  /api/v1/auctions/{lotId}/extend:
+    post:
+      summary: Extend auction timer (auctioneer only)
+      operationId: extendLot
+      tags: [Auction Controls]
+      parameters:
+        - name: lotId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [extraMinutes]
+              properties:
+                extraMinutes: { type: integer, minimum: 1, maximum: 60 }
+      responses:
+        '200':
+          description: Lot extended
+
+  /api/v1/auctions/{lotId}/pause:
+    post:
+      summary: Pause auction (auctioneer only, Rule 11.2)
+      operationId: pauseLot
+      tags: [Auction Controls]
+      parameters:
+        - name: lotId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Lot paused
+
+  /api/v1/auctions/{lotId}/close:
+    post:
+      summary: Close auction immediately (auctioneer only)
+      operationId: closeLot
+      tags: [Auction Controls]
+      parameters:
+        - name: lotId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Lot closed
+
+  /api/v1/auctions/{lotId}/questions:
+    post:
+      summary: Submit a question (bidder)
+      operationId: submitQuestion
+      tags: [Q&A]
+      parameters:
+        - name: lotId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:  { type: string, maxLength: 500 }
+                category: { type: string, enum: [GENERAL, PROPERTY_INFO, BIDDING_RULES, TECHNICAL, COMPLAINT] }
+      responses:
+        '200':
+          description: Question submitted
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/LotQuestion' }
+
+    get:
+      summary: Auctioneer question queue
+      operationId: getQuestionQueue
+      tags: [Q&A]
+      parameters:
+        - name: lotId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string, enum: [PENDING, ANSWERED, DISMISSED, ESCALATED, ALL] }
+        - name: sort
+          in: query
+          schema: { type: string, enum: [newest, urgent], default: newest }
+      responses:
+        '200':
+          description: Question queue
+
+  /api/v1/auctions/{lotId}/questions/{questionId}/answer:
+    post:
+      summary: Answer a question (auctioneer)
+      operationId: answerQuestion
+      tags: [Q&A]
+      parameters:
+        - name: lotId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: questionId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [response]
+              properties:
+                response:       { type: string, maxLength: 1000 }
+                answerPublicly: { type: boolean, default: false }
+      responses:
+        '200':
+          description: Question answered
+
+  /api/v1/auctions/{lotId}/credential/status:
+    get:
+      summary: Get bidding credential status for authenticated user
+      operationId: getCredentialStatus
+      tags: [Credentials]
+      parameters:
+        - name: lotId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Credential status
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          credentialId: { type: string, nullable: true }
+                          status:       { type: string, enum: [ACTIVE, REVOKED, EXPIRED] }
+                          expiresAt:    { type: string, format: date-time }
+                          bidCountUsed: { type: integer }
+
+  /api/v1/auctions/{lotId}/credentials/{credentialId}/revoke:
+    post:
+      summary: Revoke a bidder's credential (auctioneer, Rule 11.3)
+      operationId: revokeCredential
+      tags: [Credentials]
+      parameters:
+        - name: lotId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: credentialId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason: { type: string }
+      responses:
+        '200':
+          description: Credential revoked

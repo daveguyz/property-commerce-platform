@@ -41,12 +41,14 @@
 
         <!-- Integrations (optional adapters) -->
         <module>integrations/shopify</module>
+        <module>integrations/webhook-router</module>
     </modules>
 
     <properties>
         <java.version>21</java.version>
         <spring-boot.version>3.3.0</spring-boot.version>
         <stripe.version>25.1.0</stripe.version>
+        <springdoc.version>2.5.0</springdoc.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
@@ -63,6 +65,11 @@
                 <groupId>com.stripe</groupId>
                 <artifactId>stripe-java</artifactId>
                 <version>${stripe.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc.version}</version>
             </dependency>
             <!-- Internal shared modules -->
             <dependency>

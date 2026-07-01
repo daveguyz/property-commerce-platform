@@ -90,10 +90,36 @@ management:
 propertycommerce:
   jwt:
     secret: ${JWT_SECRET:base64_encoded_256_bit_secret_key_replace_in_production}
+  auth-service:
+    internal-url: ${AUTH_SERVICE_URL:http://auth-service}
 
         - id: auth-service
           uri: lb://auth-service
           predicates: [ Path=/api/v1/auth/** ]
+
+        - id: tenant-api-key-management
+          uri: lb://auth-service
+          predicates: [ Path=/api/v1/tenants/*/api-keys/** ]
+          filters:
+            - name: JwtAuthGatewayFilter
+
+        - id: tenant-api-key-validate-internal
+          uri: lb://auth-service
+          predicates: [ Path=/api/v1/auth/api-keys/validate ]
+          # No auth filter — called internally by ApiKeyGatewayFilter
+
+        - id: booking-agreements
+          uri: lb://booking-engine
+          predicates: [ Path=/api/v1/agreements/** ]
+          filters:
+            - name: JwtAuthGatewayFilter
+
+        - id: webhooks
+          uri: lb://webhook-router
+          predicates: [ Path=/api/v1/webhooks/** ]
+          filters:
+            - name: ApiKeyGatewayFilter
+
 
         - id: analytics-service
           uri: lb://analytics-service

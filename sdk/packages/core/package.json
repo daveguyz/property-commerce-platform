@@ -1,0 +1,9 @@
+{
+  "name": "@property-commerce/core",
+  "version": "2.0.0",
+  "description": "Core runtime for the Property Commerce Platform SDK — config, auth, api, i18n, widget registry",
+  "type": "module",
+  "main": "./src/index.js",
+  "module": "./src/index.js",
+  "license": "Apache-2.0"
+}

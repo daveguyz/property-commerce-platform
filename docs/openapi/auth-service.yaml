@@ -1,0 +1,183 @@
+openapi: 3.1.0
+info:
+  title: Property Commerce Platform — Auth Service
+  version: 2.0.0
+  description: |
+    Authentication, registration, role management, and API key issuance.
+
+    All other services accept JWTs issued by this service. JWTs carry the
+    `sub` (userId), `email`, `roles`, and `tenantId` claims.
+
+    Access tokens expire in 24 hours. Use `POST /api/v1/auth/refresh` to
+    rotate tokens without requiring the user to log in again.
+
+servers:
+  - url: https://api.propertycommerce.io
+    description: Production
+  - url: http://localhost:8080
+    description: Local
+
+paths:
+
+  /api/v1/auth/register:
+    post:
+      summary: Register a new user
+      operationId: register
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, firstName, lastName]
+              properties:
+                email:     { type: string, format: email }
+                password:  { type: string, minLength: 8 }
+                firstName: { type: string }
+                lastName:  { type: string }
+                phone:     { type: string, nullable: true }
+                roles:     { type: array, items: { type: string }, default: [GUEST] }
+      responses:
+        '200':
+          description: Registration successful — verify email to activate account
+
+  /api/v1/auth/login:
+    post:
+      summary: Login and receive JWT tokens
+      operationId: login
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:    { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      accessToken:  { type: string, description: "JWT — expires 24h" }
+                      refreshToken: { type: string, description: "Rotate at expiry" }
+                      userId:       { type: string }
+                      roles:        { type: array, items: { type: string } }
+        '401':
+          description: Invalid credentials
+
+  /api/v1/auth/refresh:
+    post:
+      summary: Rotate tokens using a refresh token
+      operationId: refresh
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken: { type: string }
+      responses:
+        '200':
+          description: New token pair issued
+        '401':
+          description: Refresh token expired or invalid
+
+  /api/v1/tenants/{tenantId}/api-keys:
+    post:
+      summary: Issue a new tenant API key
+      operationId: issueApiKey
+      tags: [API Keys]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [label]
+              properties:
+                label: { type: string, example: "WordPress plugin (production)" }
+                test:  { type: boolean, default: false, description: "Use pcp_test_ prefix" }
+      responses:
+        '200':
+          description: |
+            Key issued. The `plaintextKey` field is returned **once only** and
+            cannot be retrieved again. Store it securely immediately.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  data:
+                    type: object
+                    properties:
+                      keyId:        { type: string }
+                      plaintextKey: { type: string, example: "pcp_live_a1b2c3d4..." }
+                      displayPrefix: { type: string, example: "pcp_live_a1b2…" }
+                      createdAt:    { type: string, format: date-time }
+
+    get:
+      summary: List API keys for a tenant
+      operationId: listApiKeys
+      tags: [API Keys]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Active API keys (plaintext never returned after issuance)
+
+  /api/v1/tenants/{tenantId}/api-keys/{keyId}:
+    delete:
+      summary: Revoke an API key immediately
+      operationId: revokeApiKey
+      tags: [API Keys]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: keyId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Key revoked
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
