@@ -1,0 +1,40 @@
+{
+  "PCP SDK init": {
+    "prefix": "pcp-init",
+    "body": [
+      "<script>",
+      "  window.PCPConfig = {",
+      "    apiUrl: '${1:https://api.propertycommerce.io}',",
+      "    tenantId: '${2:your-tenant-uuid}',",
+      "    currency: '${3:USD}',",
+      "    theme: { primaryColor: '${4:#6366f1}', borderRadius: '${5:8px}' },",
+      "  };",
+      "</script>",
+      "<script src=\"https://cdn.propertycommerce.io/sdk/v2/pcp.min.js\"></script>"
+    ],
+    "description": "Property Commerce SDK config + script tag"
+  },
+  "PCP auction listing": {
+    "prefix": "pcp-auction-listing",
+    "body": [
+      "<div id=\"${1:auction-listings}\"></div>",
+      "<script>",
+      "  PCP.mount('auction-listing', '#${1:auction-listings}', {",
+      "    roomUrl: '${2:/auction-room/?lot={lotId}}',",
+      "  });",
+      "</script>"
+    ],
+    "description": "Mount the auction listing grid"
+  },
+  "PCP auction room": {
+    "prefix": "pcp-auction-room",
+    "body": [
+      "<div id=\"${1:auction-room}\"></div>",
+      "<script>",
+      "  const lotId = new URLSearchParams(location.search).get('lot');",
+      "  PCP.mount('auction-room', '#${1:auction-room}', { lotId });",
+      "</script>"
+    ],
+    "description": "Mount the live auction room (lot from URL)"
+  }
+}

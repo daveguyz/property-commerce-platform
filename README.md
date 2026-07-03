@@ -95,6 +95,36 @@ mvn spring-boot:run
 - [Authentication](docs/guides/authentication.md)
 - [Webhooks](docs/guides/webhooks.md)
 
+
+## Project status — migration phases
+
+| Phase | Deliverable | Status |
+|---|---|---|
+| A | Repo migration, `com.propertycommerce` rename, CI/CD | ✅ |
+| B | Embeddable JS SDK (`pcp.min.js`, mock mode, auction-listing widget) | ✅ |
+| C | Tenant API keys, `ApiKeyGatewayFilter`, webhook-router, OpenAPI specs | ✅ |
+| D | Multi-tenancy: tenant-service, white-label config, tenantId on events | ✅ |
+| E | WordPress plugin (shortcodes + Gutenberg blocks) | ✅ |
+| F | Demo site + SDK playground (`sdk/demo/`) | ✅ |
+| G | npm `@property-commerce/sdk`, TypeScript types, CDN release pipeline | ✅ |
+| H | Kubernetes manifests (15 services, HPA, ingress) | ✅ |
+| I | Tenant dashboard (`dashboard/`) + integrations catalogue | ✅ |
+| J | VS Code extension `pcp-tools` (monitor, API explorer, snippets) | ✅ |
+| K | `staysphere-aos` archived with deprecation notice | ✅ |
+
+> Java services are written but **not compile-verified in this environment**
+> (Maven Central unreachable from the sandbox). Run `mvn verify` via CI before
+> deploying. The SDK, dashboard, and extension are build- and test-verified.
+
+## Repository additions beyond `platform/`
+
+- `sdk/` — embeddable widget SDK + demo + playground
+- `dashboard/` — static tenant dashboard (API keys, webhooks, delivery logs)
+- `integrations/wordpress/` — WordPress plugin
+- `integrations/webhook-router/` — outbound webhook microservice
+- `vscode-extension/` — pcp-tools for the VS Code Marketplace
+- `docker/k8s/` — production Kubernetes manifests
+
 ## Migrated from
 
 This project was migrated from `staysphere-aos` (a Shopify-specific property

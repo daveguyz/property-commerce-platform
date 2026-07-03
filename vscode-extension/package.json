@@ -5,22 +5,67 @@
   "version": "0.1.0",
   "publisher": "propertycommerce",
   "icon": "icon.png",
-  "engines": { "vscode": "^1.85.0" },
-  "categories": ["Other", "Snippets"],
-  "keywords": ["property", "auction", "real-estate", "pcp"],
-  "activationEvents": ["onStartupFinished"],
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Snippets"
+  ],
+  "keywords": [
+    "property",
+    "auction",
+    "real-estate",
+    "pcp"
+  ],
+  "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "pcp-tools",
+          "title": "Property Commerce",
+          "icon": "$(home)"
+        }
+      ]
+    },
+    "views": {
+      "pcp-tools": [
+        {
+          "id": "pcpAuctionMonitor",
+          "name": "Auction Monitor"
+        },
+        {
+          "id": "pcpApiExplorer",
+          "name": "API Explorer"
+        }
+      ]
+    },
     "commands": [
       {
-        "command": "pcp.openMonitor",
-        "title": "PCP: Open Auction Monitor"
+        "command": "pcp.refreshMonitor",
+        "title": "PCP: Refresh Auction Monitor",
+        "icon": "$(refresh)"
       },
       {
-        "command": "pcp.openApiExplorer",
-        "title": "PCP: Open API Explorer"
+        "command": "pcp.insertSnippet",
+        "title": "PCP: Insert API Snippet"
+      },
+      {
+        "command": "pcp.openDashboard",
+        "title": "PCP: Open Tenant Dashboard"
       }
     ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "pcp.refreshMonitor",
+          "when": "view == pcpAuctionMonitor",
+          "group": "navigation"
+        }
+      ]
+    },
     "configuration": {
       "title": "Property Commerce Platform",
       "properties": {
@@ -32,36 +77,45 @@
         "pcp.apiKey": {
           "type": "string",
           "default": "",
-          "description": "Your tenant API key"
+          "description": "Tenant API key (pcp_live_...)"
         },
         "pcp.tenantId": {
           "type": "string",
           "default": "",
-          "description": "Your tenant ID"
+          "description": "Tenant UUID"
         }
       }
     },
     "snippets": [
-      { "language": "html",       "path": "./snippets/html.json" },
-      { "language": "javascript", "path": "./snippets/js.json" },
-      { "language": "php",        "path": "./snippets/php.json" }
+      {
+        "language": "html",
+        "path": "./snippets/html.json"
+      },
+      {
+        "language": "javascript",
+        "path": "./snippets/js.json"
+      },
+      {
+        "language": "php",
+        "path": "./snippets/php.json"
+      }
     ]
   },
   "scripts": {
-    "compile":   "tsc -p ./",
-    "watch":     "tsc -watch -p ./",
-    "package":   "vsce package",
-    "publish":   "vsce publish"
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package",
+    "publish": "vsce publish"
   },
   "dependencies": {},
   "devDependencies": {
     "@types/vscode": "^1.85.0",
-    "typescript":    "^5.0.0",
-    "@vscode/vsce":  "^2.0.0"
+    "typescript": "^5.0.0",
+    "@vscode/vsce": "^2.0.0"
   },
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url":  "https://github.com/daveguyz/property-commerce-platform"
+    "url": "https://github.com/daveguyz/property-commerce-platform"
   }
 }

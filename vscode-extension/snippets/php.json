@@ -1,0 +1,26 @@
+{
+  "PCP WordPress shortcodes": {
+    "prefix": "pcp-wp-shortcode",
+    "body": [
+      "// Property Commerce Platform shortcodes:",
+      "// [pcp_auction_listing]                 — listing grid",
+      "// [pcp_auction_room lot_id=\"${1:uuid}\"] — live room",
+      "// [pcp_account]                          — bidder account",
+      "echo do_shortcode('[pcp_auction_listing]');"
+    ],
+    "description": "PCP WordPress shortcode reference"
+  },
+  "PCP webhook verify (PHP)": {
+    "prefix": "pcp-webhook-verify",
+    "body": [
+      "function pcp_verify_signature(\\$signing_secret): bool {",
+      "    \\$sig  = \\$_SERVER['HTTP_X_PCP_SIGNATURE'] ?? '';",
+      "    \\$ts   = \\$_SERVER['HTTP_X_PCP_TIMESTAMP'] ?? '';",
+      "    \\$body = file_get_contents('php://input');",
+      "    \\$expected = 'sha256=' . hash_hmac('sha256', \\$ts . '.' . \\$body, \\$signing_secret);",
+      "    return hash_equals(\\$expected, \\$sig);",
+      "}"
+    ],
+    "description": "Verify a PCP webhook in PHP"
+  }
+}

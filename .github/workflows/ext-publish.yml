@@ -1,0 +1,42 @@
+# Publishes the VS Code extension on ext-v* tags to both the VS Code
+# Marketplace and Open VSX (for VSCodium / Gitpod users).
+name: Extension Publish
+
+on:
+  push:
+    tags: ['ext-v*']
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+
+      - name: Sync version from tag
+        working-directory: vscode-extension
+        run: npm version ${GITHUB_REF_NAME#ext-v} --no-git-tag-version --allow-same-version
+
+      - name: Build & package
+        working-directory: vscode-extension
+        run: |
+          npm install
+          npx tsc -p .
+          npx @vscode/vsce package -o pcp-tools.vsix
+
+      - name: Publish to VS Code Marketplace
+        working-directory: vscode-extension
+        run: npx @vscode/vsce publish --packagePath pcp-tools.vsix
+        env: { VSCE_PAT: '${{ secrets.VSCE_PAT }}' }
+        continue-on-error: true   # until marketplace publisher account is created
+
+      - name: Publish to Open VSX
+        working-directory: vscode-extension
+        run: npx ovsx publish pcp-tools.vsix
+        env: { OVSX_PAT: '${{ secrets.OVSX_PAT }}' }
+        continue-on-error: true
+
+      - uses: actions/upload-artifact@v4
+        with: { name: pcp-tools-vsix, path: vscode-extension/pcp-tools.vsix }

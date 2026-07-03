@@ -1,0 +1,45 @@
+{
+  "PCP programmatic init": {
+    "prefix": "pcp-init",
+    "body": [
+      "import PCP from '@property-commerce/sdk';",
+      "",
+      "await PCP.init({",
+      "  apiUrl: '${1:https://api.propertycommerce.io}',",
+      "  tenantId: '${2:your-tenant-uuid}',",
+      "});",
+      "PCP.mount('${3|auction-listing,auction-room,account|}', '#${4:container}');"
+    ],
+    "description": "Initialise the SDK from a bundled app"
+  },
+  "PCP API fetch": {
+    "prefix": "pcp-fetch",
+    "body": [
+      "const res = await fetch('${1:https://api.propertycommerce.io}${2:/api/v1/auctions}', {",
+      "  headers: {",
+      "    'X-Api-Key': process.env.PCP_API_KEY,",
+      "    'X-Tenant-Id': process.env.PCP_TENANT_ID,",
+      "  },",
+      "});",
+      "const data = await res.json();"
+    ],
+    "description": "Server-to-server API call with tenant key"
+  },
+  "PCP webhook verify": {
+    "prefix": "pcp-webhook-verify",
+    "body": [
+      "const crypto = require('crypto');",
+      "",
+      "function verifyPcpSignature(req, signingSecret) {",
+      "  const sig = req.headers['x-pcp-signature']; // 'sha256=...'",
+      "  const ts  = req.headers['x-pcp-timestamp'];",
+      "  const expected = 'sha256=' + crypto",
+      "    .createHmac('sha256', signingSecret)",
+      "    .update(ts + '.' + req.rawBody)",
+      "    .digest('hex');",
+      "  return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected));",
+      "}"
+    ],
+    "description": "Verify an inbound PCP webhook delivery"
+  }
+}
