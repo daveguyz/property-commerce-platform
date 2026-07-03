@@ -9,6 +9,7 @@ public class PurchaseAgreementRequiredEvent {
     public static final String TOPIC = "auction.purchase-agreement-required";
 
     private String eventId;
+    private String tenantId;   // Phase D: multi-tenancy scope
     private String lotId;
     private String propertyId;
     private String lotTitle;

@@ -8,6 +8,7 @@ public class BiddingCredentialRevokedEvent {
     public static final String TOPIC = "bid.credential-revoked";
 
     private String eventId;
+    private String tenantId;   // Phase D: multi-tenancy scope
     private String credentialId;
     private String lotId;
     private String bidderId;

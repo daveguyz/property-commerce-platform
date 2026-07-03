@@ -38,6 +38,7 @@
         <module>platform/services/analytics-service</module>
         <module>platform/services/messaging-service</module>
         <module>platform/services/auction-service</module>
+        <module>platform/services/tenant-service</module>
 
         <!-- Integrations (optional adapters) -->
         <module>integrations/shopify</module>

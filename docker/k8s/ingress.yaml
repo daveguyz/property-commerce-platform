@@ -1,0 +1,26 @@
+# Nginx ingress → api-gateway. WebSocket routes get session affinity so
+# STOMP connections stick to one auction-service pod via the gateway.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pcp-ingress
+  namespace: pcp
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"   # long-lived WS
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/affinity-mode: "persistent"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts: [api.propertycommerce.io]
+      secretName: pcp-api-tls
+  rules:
+    - host: api.propertycommerce.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: api-gateway, port: { number: 8080 } }

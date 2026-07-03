@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Auctions — Acme Realty</title>
+  <style>
+    body { font-family: Georgia, serif; margin: 0; }
+    nav  { background: #14532d; padding: 14px 32px; }
+    nav a { color: #fff; text-decoration: none; margin-right: 24px; }
+    main { max-width: 1080px; margin: 0 auto; padding: 32px 16px; }
+  </style>
+</head>
+<body>
+  <nav><a href="../index.html">Acme Realty</a><a href="auctions.html">Auctions</a></nav>
+  <main>
+    <h1>All auctions</h1>
+    <div id="auction-listings"></div>
+  </main>
+  <script>
+    window.PCPConfig = {
+      tenantId: 'demo-tenant', currency: 'USD', locale: 'en',
+      theme: { primaryColor: '#14532d', borderRadius: '4px' },
+    };
+  </script>
+  <script src="../../dist/pcp.min.js"></script>
+  <script>
+    PCP.mount('auction-listing', '#auction-listings', {
+      roomUrl: 'auction-room.html?lot={lotId}',
+    });
+  </script>
+</body>
+</html>

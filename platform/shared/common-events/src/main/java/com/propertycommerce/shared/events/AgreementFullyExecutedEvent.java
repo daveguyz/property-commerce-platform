@@ -9,6 +9,7 @@ public class AgreementFullyExecutedEvent {
     public static final String TOPIC = "auction.agreement-executed";
 
     private String eventId;
+    private String tenantId;   // Phase D: multi-tenancy scope
     private String agreementId;
     private String lotId;
     private String propertyId;

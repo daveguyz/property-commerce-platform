@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 public class ReviewCreatedEvent {
     public static final String TOPIC = "review.created";
     private String eventId;
+    private String tenantId;   // Phase D: multi-tenancy scope
     private String reviewId;
     private String bookingId;
     private String propertyId;

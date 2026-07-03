@@ -71,6 +71,7 @@ jobs:
           - platform/services/pricing-engine
           - platform/infrastructure/api-gateway
           - integrations/webhook-router
+          - platform/services/tenant-service
 
     services:
       postgres:

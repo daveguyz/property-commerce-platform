@@ -1,27 +1,50 @@
 {
   "name": "@property-commerce/sdk",
   "version": "2.0.0",
-  "description": "Embeddable property commerce widgets — auction, booking, listing, account",
-  "private": true,
+  "description": "Embeddable property commerce widgets \u2014 auction, booking, listing, account",
+  "private": false,
   "workspaces": [
     "packages/*",
     "adapters/*",
     "demo"
   ],
   "scripts": {
-    "build":   "vite build",
-    "dev":     "vite",
+    "build": "vite build",
+    "dev": "vite",
     "preview": "vite preview",
-    "lint":    "eslint packages/**/*.js"
+    "lint": "eslint packages/**/*.js"
   },
   "devDependencies": {
-    "vite":    "^5.0.0",
-    "eslint":  "^8.0.0"
+    "vite": "^5.0.0",
+    "eslint": "^8.0.0"
   },
-  "keywords": ["property", "auction", "real-estate", "commerce", "widget"],
+  "keywords": [
+    "property",
+    "auction",
+    "real-estate",
+    "commerce",
+    "widget"
+  ],
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url":  "https://github.com/daveguyz/property-commerce-platform"
+    "url": "https://github.com/daveguyz/property-commerce-platform"
+  },
+  "main": "./dist/pcp.cjs.js",
+  "module": "./dist/pcp.esm.js",
+  "types": "./types/index.d.ts",
+  "unpkg": "./dist/pcp.min.js",
+  "files": [
+    "dist",
+    "types",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./dist/pcp.esm.js",
+      "require": "./dist/pcp.cjs.js",
+      "default": "./dist/pcp.esm.js"
+    }
   }
 }

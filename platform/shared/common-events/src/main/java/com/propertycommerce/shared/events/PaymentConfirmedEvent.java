@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 public class PaymentConfirmedEvent {
     public static final String TOPIC = "payment.confirmed";
     private String eventId;
+    private String tenantId;   // Phase D: multi-tenancy scope
     private String bookingId;
     private String paymentIntentId;
     private BigDecimal amount;

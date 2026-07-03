@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 public class BookingCancelledEvent {
     public static final String TOPIC = "booking.cancelled";
     private String eventId;
+    private String tenantId;   // Phase D: multi-tenancy scope
     private String bookingId;
     private String propertyId;
     private String guestId;

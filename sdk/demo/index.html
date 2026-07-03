@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acme Realty — Demo host site</title>
+  <style>
+    /* Deliberately minimal host-site styling — proves the SDK adapts */
+    body { font-family: Georgia, serif; margin: 0; color: #1a1a1a; }
+    nav  { background: #14532d; padding: 14px 32px; display: flex; gap: 24px; }
+    nav a { color: #fff; text-decoration: none; font-size: 15px; }
+    main { max-width: 1080px; margin: 0 auto; padding: 32px 16px; }
+    .hero { padding: 48px 0; }
+    .hero h1 { font-size: 2.2rem; margin: 0 0 8px; }
+    .hero p  { color: #4b5563; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="index.html"><strong>Acme Realty</strong></a>
+    <a href="pages/auctions.html">Auctions</a>
+    <a href="pages/auction-room.html">Live Room</a>
+    <a href="playground.html">SDK Playground</a>
+  </nav>
+  <main>
+    <div class="hero">
+      <h1>Acme Realty — a plain HTML host site</h1>
+      <p>
+        This demo site has its own fonts (Georgia), its own colours (forest green),
+        and no build system. The Property Commerce widgets below are mounted with
+        one script tag and inherit the branding tokens configured in
+        <code>window.PCPConfig</code>.
+      </p>
+    </div>
+
+    <h2>Featured auctions</h2>
+    <div id="featured-auctions"></div>
+  </main>
+
+  <script>
+    window.PCPConfig = {
+      // No apiUrl → SDK runs in mock mode with sample lots
+      tenantId: 'demo-tenant',
+      currency: 'USD',
+      locale: 'en',
+      theme: { primaryColor: '#14532d', borderRadius: '4px' },
+    };
+  </script>
+  <script src="../dist/pcp.min.js"></script>
+  <script>
+    PCP.mount('auction-listing', '#featured-auctions', {
+      roomUrl: 'pages/auction-room.html?lot={lotId}',
+    });
+  </script>
+</body>
+</html>

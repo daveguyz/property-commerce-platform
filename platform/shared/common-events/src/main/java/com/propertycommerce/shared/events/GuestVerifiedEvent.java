@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 public class GuestVerifiedEvent {
     public static final String TOPIC = "guest.verified";
     private String eventId;
+    private String tenantId;   // Phase D: multi-tenancy scope
     private String guestId;
     private String verificationType;
     private LocalDateTime occurredAt;

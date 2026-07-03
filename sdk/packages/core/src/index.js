@@ -21,7 +21,7 @@
  * that doesn't want a global script tag).
  */
 
-import { loadConfig, getConfig } from './config.js';
+import { loadConfig, getConfig, fetchTenantConfig } from './config.js';
 import { Auth } from './auth.js';
 import { api } from './api.js';
 import { toast, escapeHtml } from './ui.js';
@@ -39,7 +39,9 @@ function buildContext() {
 const PCP = {
   // ── Setup ──────────────────────────────────────────────────────────
   init(overrides) {
-    return loadConfig(overrides);
+    loadConfig(overrides);
+    // Phase D: pull white-label branding from tenant-service (non-blocking)
+    return fetchTenantConfig();
   },
   config: getConfig,
 

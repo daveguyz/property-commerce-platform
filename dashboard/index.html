@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tenant Dashboard — Property Commerce Platform</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <header>
+    <strong>Property Commerce Platform</strong>
+    <span id="tenant-badge"></span>
+  </header>
+
+  <div class="layout">
+    <nav>
+      <a href="#overview"     class="nav-link" data-page="overview">Overview</a>
+      <a href="#api-keys"     class="nav-link" data-page="api-keys">API Keys</a>
+      <a href="#webhooks"     class="nav-link" data-page="webhooks">Webhooks</a>
+      <a href="#integrations" class="nav-link" data-page="integrations">Integrations</a>
+    </nav>
+
+    <main>
+      <!-- Connection setup (shown until configured) -->
+      <section id="page-connect" class="page">
+        <h1>Connect to your platform</h1>
+        <div class="card" style="max-width:480px">
+          <label>Platform API URL
+            <input type="url" id="conn-api" value="https://api.propertycommerce.io"></label>
+          <label>Tenant ID
+            <input type="text" id="conn-tenant" placeholder="uuid"></label>
+          <label>API Key
+            <input type="password" id="conn-key" placeholder="pcp_live_..."></label>
+          <button class="btn" id="conn-save">Connect</button>
+          <p class="hint">Stored in this browser only (sessionStorage). Nothing is sent anywhere except your own platform API.</p>
+        </div>
+      </section>
+
+      <section id="page-overview" class="page hidden">
+        <h1>Overview</h1>
+        <div class="stat-grid">
+          <div class="card stat"><span class="stat-label">Active webhooks</span><span class="stat-value" id="stat-webhooks">–</span></div>
+          <div class="card stat"><span class="stat-label">API keys</span><span class="stat-value" id="stat-keys">–</span></div>
+          <div class="card stat"><span class="stat-label">Tenant</span><span class="stat-value" id="stat-tenant" style="font-size:1rem">–</span></div>
+        </div>
+        <div class="card">
+          <h2>Embed snippet</h2>
+          <pre id="embed-snippet"></pre>
+        </div>
+      </section>
+
+      <section id="page-api-keys" class="page hidden">
+        <h1>API Keys</h1>
+        <div class="card">
+          <form id="key-form" class="inline-form">
+            <input type="text" id="key-label" placeholder="Label (e.g. WordPress production)" required>
+            <label class="checkbox"><input type="checkbox" id="key-test"> Test key</label>
+            <button class="btn" type="submit">Issue key</button>
+          </form>
+          <div id="new-key-reveal" class="reveal hidden"></div>
+        </div>
+        <div class="card"><table id="keys-table">
+          <thead><tr><th>Label</th><th>Prefix</th><th>Last used</th><th>Created</th><th></th></tr></thead>
+          <tbody></tbody></table></div>
+      </section>
+
+      <section id="page-webhooks" class="page hidden">
+        <h1>Webhooks</h1>
+        <div class="card">
+          <form id="wh-form" class="inline-form">
+            <input type="url" id="wh-url" placeholder="https://yoursite.com/pcp-webhook" required style="flex:2">
+            <input type="text" id="wh-filter" placeholder="Event filter (blank = all), e.g. auction.*,bid.placed" style="flex:2">
+            <button class="btn" type="submit">Register</button>
+          </form>
+          <div id="new-wh-reveal" class="reveal hidden"></div>
+        </div>
+        <div class="card"><table id="wh-table">
+          <thead><tr><th>URL</th><th>Filter</th><th>Failures</th><th>Last delivery</th><th></th></tr></thead>
+          <tbody></tbody></table></div>
+        <div class="card hidden" id="wh-deliveries-card">
+          <h2>Recent deliveries — <span id="wh-deliveries-url"></span></h2>
+          <table id="wh-deliveries-table">
+            <thead><tr><th>Event</th><th>Status</th><th>HTTP</th><th>Attempts</th><th>Time</th></tr></thead>
+            <tbody></tbody></table>
+        </div>
+      </section>
+
+      <section id="page-integrations" class="page hidden">
+        <h1>Integrations</h1>
+        <p class="hint">Connect via webhooks + API keys today; one-click connectors ship per-integration.</p>
+        <div class="int-grid" id="int-grid"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

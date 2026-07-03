@@ -1,0 +1,37 @@
+# PostgreSQL — single StatefulSet for dev/small deployments.
+# Production: use a managed database (RDS, Cloud SQL, Neon) instead.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: pcp
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector: { matchLabels: { app: postgres } }
+  template:
+    metadata: { labels: { app: postgres } }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports: [{ containerPort: 5432 }]
+          envFrom: [{ secretRef: { name: pcp-secrets } }]
+          env:
+            - name: POSTGRES_DB
+              value: pcp
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+  volumeClaimTemplates:
+    - metadata: { name: data }
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources: { requests: { storage: 20Gi } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: postgres, namespace: pcp }
+spec:
+  selector: { app: postgres }
+  ports: [{ port: 5432 }]
+  clusterIP: None

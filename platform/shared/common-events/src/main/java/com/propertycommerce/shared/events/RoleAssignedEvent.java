@@ -8,6 +8,7 @@ public class RoleAssignedEvent {
     public static final String TOPIC = "auth.role.assigned";
 
     private String eventId;
+    private String tenantId;   // Phase D: multi-tenancy scope
     private String userId;
     private String email;
     private String role;          // e.g. "auctioneer", "host", "admin"

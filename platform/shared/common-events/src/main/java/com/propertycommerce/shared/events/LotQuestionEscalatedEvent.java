@@ -8,6 +8,7 @@ public class LotQuestionEscalatedEvent {
     public static final String TOPIC = "auction.question-escalated";
 
     private String eventId;
+    private String tenantId;   // Phase D: multi-tenancy scope
     private String questionId;
     private String lotId;
     private String bidderId;

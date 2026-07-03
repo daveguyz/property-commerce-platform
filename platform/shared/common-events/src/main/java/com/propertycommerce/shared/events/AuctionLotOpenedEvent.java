@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 public class AuctionLotOpenedEvent {
     public static final String TOPIC = "auction.lot.opened";
     private String eventId;
+    private String tenantId;   // Phase D: multi-tenancy scope
     private String auctionLotId;
     private String auctionType;
     private String propertyId;

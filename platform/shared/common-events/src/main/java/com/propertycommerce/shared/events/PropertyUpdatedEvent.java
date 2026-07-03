@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 public class PropertyUpdatedEvent {
     public static final String TOPIC = "property.updated";
     private String eventId;
+    private String tenantId;   // Phase D: multi-tenancy scope
     private String propertyId;
     private String hostId;
     private String shopifyProductId;

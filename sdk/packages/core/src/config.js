@@ -90,3 +90,38 @@ function applyThemeTokens(theme) {
 export function isMockMode() {
   return getConfig().mockMode === true;
 }
+
+/**
+ * Phase D — white-label: fetch the tenant's branding config from the
+ * platform and merge it under the host's explicit overrides. Host-site
+ * PCPConfig.theme values always win over tenant defaults, so an agency
+ * can still tweak per-page.
+ *
+ * Called automatically by PCP.init() when a tenantId is configured and
+ * we're not in mock mode. Failure is non-fatal — widgets fall back to
+ * the static config.
+ */
+export async function fetchTenantConfig() {
+  const config = getConfig();
+  if (!config.tenantId || config.mockMode) return config;
+  try {
+    const res = await fetch(
+      `${config.apiUrl.replace(/\/$/, '')}/api/v1/tenants/${config.tenantId}/config`
+    );
+    if (!res.ok) return config;
+    const body = await res.json();
+    const remote = body?.data || {};
+    const hostTheme = (typeof window !== 'undefined' && window.PCPConfig?.theme) || {};
+    CONFIG = {
+      ...CONFIG,
+      currency: window.PCPConfig?.currency || remote.currency || CONFIG.currency,
+      locale: window.PCPConfig?.locale || remote.locale || CONFIG.locale,
+      features: remote.features || {},
+      theme: { ...CONFIG.theme, ...(remote.theme || {}), ...hostTheme },
+    };
+    applyThemeTokens(CONFIG.theme);
+  } catch (_) {
+    /* network failure — static config remains in effect */
+  }
+  return CONFIG;
+}

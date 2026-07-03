@@ -9,6 +9,7 @@ public class PaymentDefaultedEvent {
     public static final String TOPIC = "auction.payment-defaulted";
 
     private String eventId;
+    private String tenantId;   // Phase D: multi-tenancy scope
     private String agreementId;
     private String lotId;
     private String propertyId;

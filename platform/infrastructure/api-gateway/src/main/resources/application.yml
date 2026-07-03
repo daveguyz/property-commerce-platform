@@ -114,6 +114,17 @@ propertycommerce:
           filters:
             - name: JwtAuthGatewayFilter
 
+        - id: tenant-config-public
+          uri: lb://tenant-service
+          predicates: [ Path=/api/v1/tenants/*/config ]
+          # No auth — served to every visitor browser via the SDK
+
+        - id: tenant-management
+          uri: lb://tenant-service
+          predicates: [ Path=/api/v1/tenants, Path=/api/v1/tenants/*/branding ]
+          filters:
+            - name: JwtAuthGatewayFilter
+
         - id: webhooks
           uri: lb://webhook-router
           predicates: [ Path=/api/v1/webhooks/** ]

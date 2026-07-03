@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Live Auction Room — Acme Realty</title>
+  <style>
+    body { font-family: Georgia, serif; margin: 0; }
+    nav  { background: #14532d; padding: 14px 32px; }
+    nav a { color: #fff; text-decoration: none; margin-right: 24px; }
+    main { max-width: 1080px; margin: 0 auto; padding: 32px 16px; }
+    .placeholder { border: 2px dashed #d1d5db; border-radius: 8px;
+                   padding: 48px; text-align: center; color: #6b7280; }
+  </style>
+</head>
+<body>
+  <nav><a href="../index.html">Acme Realty</a><a href="auctions.html">Auctions</a></nav>
+  <main>
+    <h1>Live Auction Room</h1>
+    <div id="auction-room">
+      <div class="placeholder">
+        <p><strong>Auction room widget</strong></p>
+        <p>Lot ID from URL: <code id="lot-display">—</code></p>
+        <p>The full live-bidding room widget (WebSocket bid feed, countdown,
+        Q&amp;A panel) is ported in the next SDK release. The listing widget
+        on the <a href="auctions.html">Auctions page</a> is fully functional.</p>
+      </div>
+    </div>
+  </main>
+  <script>
+    document.getElementById('lot-display').textContent =
+      new URLSearchParams(location.search).get('lot') || '(none)';
+  </script>
+</body>
+</html>

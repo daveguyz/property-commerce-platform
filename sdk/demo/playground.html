@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SDK Playground — Property Commerce Platform</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+           margin: 0; background: #f9fafb; color: #111827; }
+    header { background: #111827; color: #fff; padding: 16px 32px; }
+    header h1 { font-size: 1.1rem; margin: 0; }
+    .layout { display: grid; grid-template-columns: 340px 1fr; gap: 0;
+              height: calc(100vh - 57px); }
+    .panel { background: #fff; border-right: 1px solid #e5e7eb; padding: 20px;
+             overflow-y: auto; }
+    .preview { padding: 24px; overflow-y: auto; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-size: 13px; font-weight: 600;
+                   margin-bottom: 4px; color: #374151; }
+    .field input, .field select { width: 100%; padding: 8px 10px;
+      border: 1.5px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+    .btn { width: 100%; padding: 10px; background: #6366f1; color: #fff;
+           border: none; border-radius: 6px; font-weight: 700; cursor: pointer;
+           font-size: 14px; }
+    h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .5px;
+         color: #9ca3af; margin: 24px 0 12px; }
+    pre { background: #111827; color: #e5e7eb; padding: 14px; border-radius: 8px;
+          font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+    .copy-btn { background: #374151; color: #fff; border: none; padding: 6px 12px;
+                border-radius: 4px; font-size: 12px; cursor: pointer; margin-top: 6px; }
+    .mode-note { font-size: 12px; background: #fef3c7; color: #92400e;
+                 padding: 8px 12px; border-radius: 6px; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <header><h1>Property Commerce Platform — SDK Playground</h1></header>
+  <div class="layout">
+    <div class="panel">
+      <div class="mode-note" id="mode-note">
+        Mock mode — leave API URL blank to preview with sample data.
+      </div>
+
+      <h3>Connection</h3>
+      <div class="field">
+        <label for="cfg-api">API URL (blank = mock mode)</label>
+        <input type="url" id="cfg-api" placeholder="https://api.propertycommerce.io">
+      </div>
+      <div class="field">
+        <label for="cfg-tenant">Tenant ID</label>
+        <input type="text" id="cfg-tenant" value="demo-tenant">
+      </div>
+
+      <h3>Widget</h3>
+      <div class="field">
+        <label for="cfg-widget">Widget</label>
+        <select id="cfg-widget">
+          <option value="auction-listing">auction-listing</option>
+        </select>
+      </div>
+
+      <h3>Theme</h3>
+      <div class="field">
+        <label for="cfg-color">Primary colour</label>
+        <input type="color" id="cfg-color" value="#6366f1" style="height:38px">
+      </div>
+      <div class="field">
+        <label for="cfg-radius">Border radius</label>
+        <select id="cfg-radius">
+          <option value="0px">Square (0px)</option>
+          <option value="4px">Subtle (4px)</option>
+          <option value="8px" selected>Rounded (8px)</option>
+          <option value="16px">Pill-ish (16px)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="cfg-currency">Currency</label>
+        <select id="cfg-currency">
+          <option>USD</option><option>EUR</option><option>GBP</option>
+          <option>ZAR</option><option>AED</option>
+        </select>
+      </div>
+
+      <button class="btn" id="apply-btn">Apply &amp; remount</button>
+
+      <h3>Embed code</h3>
+      <pre id="embed-code"></pre>
+      <button class="copy-btn" id="copy-btn">Copy embed code</button>
+    </div>
+
+    <div class="preview">
+      <div id="widget-preview"></div>
+    </div>
+  </div>
+
+  <script src="../dist/pcp.min.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    function currentConfig() {
+      return {
+        apiUrl:   $('cfg-api').value.trim(),
+        tenantId: $('cfg-tenant').value.trim(),
+        currency: $('cfg-currency').value,
+        locale:   'en',
+        theme: {
+          primaryColor: $('cfg-color').value,
+          borderRadius: $('cfg-radius').value,
+        },
+      };
+    }
+
+    function embedSnippet(cfg, widget) {
+      return [
+        '<script>',
+        '  window.PCPConfig = ' + JSON.stringify(cfg, null, 2)
+          .split('\n').map((l, i) => i === 0 ? l : '  ' + l).join('\n') + ';',
+        '<\/script>',
+        '<script src="https://cdn.propertycommerce.io/sdk/v2/pcp.min.js"><\/script>',
+        '',
+        '<div id="pcp-widget"></div>',
+        '<script>',
+        "  PCP.mount('" + widget + "', '#pcp-widget');",
+        '<\/script>',
+      ].join('\n');
+    }
+
+    function remount() {
+      const cfg = currentConfig();
+      const widget = $('cfg-widget').value;
+      $('mode-note').textContent = cfg.apiUrl
+        ? 'Live mode — fetching from ' + cfg.apiUrl
+        : 'Mock mode — leave API URL blank to preview with sample data.';
+      PCP.init(cfg);
+      PCP.mount(widget, '#widget-preview');
+      $('embed-code').textContent = embedSnippet(cfg, widget);
+    }
+
+    $('apply-btn').addEventListener('click', remount);
+    $('copy-btn').addEventListener('click', () => {
+      navigator.clipboard.writeText($('embed-code').textContent)
+        .then(() => { $('copy-btn').textContent = 'Copied ✓';
+          setTimeout(() => $('copy-btn').textContent = 'Copy embed code', 1500); });
+    });
+
+    remount(); // initial render
+  </script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+# Deploys sdk/demo + built bundle to GitHub Pages on every main push
+# that touches the SDK. Serves as demo.propertycommerce.io via CNAME.
+name: Demo Deploy
+
+on:
+  push:
+    branches: [main]
+    paths: ['sdk/**']
+
+permissions:
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Build SDK
+        working-directory: sdk
+        run: |
+          npm ci
+          npx vite build
+      - name: Assemble site
+        run: |
+          mkdir -p site/dist
+          cp -r sdk/demo/* site/
+          cp -r sdk/dist/* site/dist/
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: site }
+      - uses: actions/deploy-pages@v4

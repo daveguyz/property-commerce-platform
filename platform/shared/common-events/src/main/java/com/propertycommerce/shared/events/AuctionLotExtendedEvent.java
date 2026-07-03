@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public class AuctionLotExtendedEvent {
     public static final String TOPIC = "auction.lot.extended";
     private String eventId;
+    private String tenantId;   // Phase D: multi-tenancy scope
     private String auctionLotId;
     private Integer extensionNumber;
     private Integer maxExtensions;

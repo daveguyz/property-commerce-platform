@@ -1,0 +1,21 @@
+# Shared non-secret config for all services.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pcp-common-config
+  namespace: pcp
+data:
+  KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+  REDIS_HOST: "redis"
+  EUREKA_URL: "http://service-discovery:8761/eureka/"
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+---
+# Secrets template — populate with real values before applying:
+#   kubectl create secret generic pcp-secrets -n pcp \
+#     --from-literal=JWT_SECRET=... \
+#     --from-literal=POSTGRES_USER=pcp \
+#     --from-literal=POSTGRES_PASSWORD=... \
+#     --from-literal=DB_USER=pcp \
+#     --from-literal=DB_PASSWORD=... \
+#     --from-literal=STRIPE_SECRET_KEY=...

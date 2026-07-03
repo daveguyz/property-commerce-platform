@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 public class PaymentFailedEvent {
     public static final String TOPIC = "payment.failed";
     private String eventId;
+    private String tenantId;   // Phase D: multi-tenancy scope
     private String bookingId;
     private String paymentIntentId;
     private String failureReason;

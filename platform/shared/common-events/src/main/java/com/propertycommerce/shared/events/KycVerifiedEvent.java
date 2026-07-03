@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public class KycVerifiedEvent {
     public static final String TOPIC = "kyc.verified";
     private String eventId;
+    private String tenantId;   // Phase D: multi-tenancy scope
     private String userId;
     private String userEmail;
     private String stripeSessionId;
